@@ -112,9 +112,10 @@
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s, background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
             touch-action: manipulation;
+            outline: none;
         }
 
         .game-button:hover {
@@ -191,13 +192,16 @@
         // Initialize game
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('gameCanvas');
-            const game = new Game(canvas);
+            const ctx = canvas.getContext('2d');
+            const game = new Game(canvas, ctx);
             const restartBtn = document.getElementById('restartBtn');
             const startScreen = document.getElementById('startScreen');
             const startBtn = document.getElementById('startBtn');
+            const touchLeft = document.getElementById('leftTouch');
+            const touchRight = document.getElementById('rightTouch');
             let gameStarted = false;
             
-            function startGame() {
+            function startGame(e) {
                 if (!gameStarted) {
                     startScreen.style.display = 'none';
                     resizeCanvas();
