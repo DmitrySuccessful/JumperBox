@@ -187,7 +187,353 @@
     </div>
 
     <script>
-        // ... Existing game classes (Particle, ParticleSystem, PowerUp, Player, Platform, Game) ...
+        // Particle System
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = Math.random() * 3 + 2;
+                this.speedX = Math.random() * 6 - 3;
+                this.speedY = Math.random() * 6 - 3;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.02 + 0.02;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += 0.1;
+                this.life -= this.decay;
+                return this.life > 0;
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = `rgba(${this.color}, ${this.life})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class ParticleSystem {
+            constructor() {
+                this.particles = [];
+            }
+
+            createJumpEffect(x, y) {
+                const colors = [
+                    '255, 255, 255',
+                    '255, 223, 186',
+                    '255, 190, 118'
+                ];
+
+                for (let i = 0; i < 15; i++) {
+                    this.particles.push(
+                        new Particle(
+                            x + Math.random() * 40,
+                            y + Math.random() * 10,
+                            colors[Math.floor(Math.random() * colors.length)]
+                        )
+                    );
+                }
+            }
+
+            update() {
+                this.particles = this.particles.filter(particle => particle.update());
+            }
+
+            draw(ctx) {
+                this.particles.forEach(particle => particle.draw(ctx));
+            }
+        }
+
+        // Power-up class
+        class PowerUp {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.width = 30;
+                this.height = 30;
+                this.type = type;
+                this.collected = false;
+            }
+
+            draw(ctx) {
+                if (this.collected) return;
+                ctx.fillStyle = this.type === 'spring' ? '#FF4081' : '#FFC107';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.fillText(this.type === 'spring' ? '↑' : '★', this.x + 8, this.y + 22);
+            }
+        }
+
+        // Player class
+        class Player {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 40;
+                this.height = 40;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.isJumping = false;
+                this.powerUpTimer = 0;
+                this.hasPowerUp = false;
+            }
+
+            update(canvasWidth) {
+                this.velocityY += 0.5;
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                if (this.x + this.width < 0) {
+                    this.x = canvasWidth;
+                } else if (this.x > canvasWidth) {
+                    this.x = -this.width;
+                }
+
+                if (this.powerUpTimer > 0) {
+                    this.powerUpTimer--;
+                    if (this.powerUpTimer === 0) {
+                        this.hasPowerUp = false;
+                    }
+                }
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = this.hasPowerUp ? '#FFD700' : '#4CAF50';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                // Draw face
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(this.x + 15, this.y + 15, 3, 0, Math.PI * 2);
+                ctx.arc(this.x + 25, this.y + 15, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(this.x + 20, this.y + 25, 5, 0, Math.PI);
+                ctx.stroke();
+            }
+
+            jump(force = -12) {
+                this.velocityY = force;
+                this.isJumping = true;
+            }
+
+            activatePowerUp(type) {
+                this.hasPowerUp = true;
+                this.powerUpTimer = 300;
+                if (type === 'spring') {
+                    this.jump(-18);
+                }
+            }
+        }
+
+        // Platform class
+        class Platform {
+            constructor(x, y, type = 'normal') {
+                this.x = x;
+                this.y = y;
+                this.width = 80;
+                this.height = 15;
+                this.type = type;
+                this.broken = false;
+                this.direction = 1;
+                this.speed = type === 'moving' ? 2 : 0;
+                
+                if (Math.random() < 0.1) {
+                    this.powerUp = new PowerUp(
+                        this.x + this.width / 2 - 15,
+                        this.y - 35,
+                        Math.random() < 0.5 ? 'spring' : 'star'
+                    );
+                }
+            }
+
+            update(canvasWidth) {
+                if (this.type === 'moving') {
+                    this.x += this.speed * this.direction;
+                    if (this.x <= 0 || this.x + this.width >= canvasWidth) {
+                        this.direction *= -1;
+                    }
+                    
+                    if (this.powerUp && !this.powerUp.collected) {
+                        this.powerUp.x = this.x + this.width / 2 - 15;
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (this.broken) return;
+                
+                switch(this.type) {
+                    case 'normal':
+                        ctx.fillStyle = '#795548';
+                        break;
+                    case 'moving':
+                        ctx.fillStyle = '#2196F3';
+                        break;
+                    case 'breakable':
+                        ctx.fillStyle = '#FF5722';
+                        break;
+                }
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                if (this.powerUp && !this.powerUp.collected) {
+                    this.powerUp.draw(ctx);
+                }
+            }
+        }
+
+        // Game class
+        class Game {
+            constructor(canvas, ctx) {
+                this.canvas = canvas;
+                this.ctx = ctx;
+                this.score = 0;
+                this.highScore = parseInt(localStorage.getItem('doodleJumpHighScore')) || 0;
+                this.gameOver = false;
+                this.platforms = [];
+                this.particles = new ParticleSystem();
+                this.difficulty = 1;
+                this.cameraY = 0;
+            }
+
+            init() {
+                const canvasWidth = this.canvas.width;
+                const canvasHeight = this.canvas.height;
+                
+                this.player = new Player(canvasWidth / 2, canvasHeight - 100);
+                this.platforms = [];
+                this.score = 0;
+                this.gameOver = false;
+                this.cameraY = 0;
+                this.difficulty = 1;
+
+                // Create initial platforms
+                for (let i = 0; i < 7; i++) {
+                    this.generatePlatform(canvasHeight - i * 100);
+                }
+            }
+
+            generatePlatform(y) {
+                const types = ['normal', 'moving', 'breakable'];
+                const type = Math.random() < 0.7 ? 'normal' : types[Math.floor(Math.random() * types.length)];
+                const x = Math.random() * (this.canvas.width - 80);
+                this.platforms.push(new Platform(x, y, type));
+            }
+
+            update() {
+                if (this.gameOver) return;
+
+                const canvasWidth = this.canvas.width;
+                const canvasHeight = this.canvas.height;
+
+                this.player.update(canvasWidth);
+                this.particles.update();
+
+                // Update difficulty
+                this.difficulty = 1 + Math.floor(this.score / 1000);
+
+                // Camera follow
+                if (this.player.y < canvasHeight / 2) {
+                    const diff = canvasHeight / 2 - this.player.y;
+                    this.cameraY += diff;
+                    this.player.y += diff;
+                    
+                    this.platforms.forEach(platform => {
+                        platform.y += diff;
+                        if (platform.powerUp) {
+                            platform.powerUp.y += diff;
+                        }
+                    });
+
+                    // Remove platforms that are off screen
+                    this.platforms = this.platforms.filter(platform => platform.y < canvasHeight);
+
+                    // Generate new platforms
+                    while (this.platforms.length < 7) {
+                        this.generatePlatform(this.platforms[this.platforms.length - 1].y - 100);
+                    }
+
+                    this.score = Math.floor(this.cameraY / 100);
+                }
+
+                // Update platforms and check collisions
+                this.platforms.forEach(platform => {
+                    platform.update(canvasWidth);
+                    
+                    // Power-up collision
+                    if (platform.powerUp && !platform.powerUp.collected &&
+                        this.player.x + this.player.width > platform.powerUp.x &&
+                        this.player.x < platform.powerUp.x + platform.powerUp.width &&
+                        this.player.y + this.player.height > platform.powerUp.y &&
+                        this.player.y < platform.powerUp.y + platform.powerUp.height) {
+                        platform.powerUp.collected = true;
+                        this.player.activatePowerUp(platform.powerUp.type);
+                    }
+                    
+                    // Platform collision
+                    if (!platform.broken && this.player.velocityY > 0 && 
+                        this.player.x + this.player.width > platform.x &&
+                        this.player.x < platform.x + platform.width &&
+                        this.player.y + this.player.height > platform.y &&
+                        this.player.y + this.player.height < platform.y + platform.height + 10) {
+                        
+                        if (platform.type === 'breakable') {
+                            platform.broken = true;
+                        }
+                        this.player.jump();
+                        this.particles.createJumpEffect(this.player.x, this.player.y + this.player.height);
+                    }
+                });
+
+                // Check game over
+                if (this.player.y > canvasHeight) {
+                    this.gameOver = true;
+                    if (this.score > this.highScore) {
+                        this.highScore = this.score;
+                        localStorage.setItem('doodleJumpHighScore', this.highScore);
+                    }
+                }
+            }
+
+            draw() {
+                const canvasWidth = this.canvas.width;
+                const canvasHeight = this.canvas.height;
+
+                // Clear canvas
+                this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                this.ctx.fillStyle = '#E0F7FA';
+                this.ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                // Draw game elements
+                this.platforms.forEach(platform => platform.draw(this.ctx));
+                this.particles.draw(this.ctx);
+                this.player.draw(this.ctx);
+
+                // Draw UI
+                this.ctx.fillStyle = '#000';
+                this.ctx.font = '20px Arial';
+                this.ctx.fillText(`Score: ${this.score}`, 10, 30);
+                this.ctx.fillText(`High Score: ${this.highScore}`, 10, 60);
+                this.ctx.fillText(`Level: ${this.difficulty}`, canvasWidth - 100, 30);
+
+                // Draw game over screen
+                if (this.gameOver) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '40px Arial';
+                    this.ctx.fillText('Game Over!', canvasWidth/2 - 100, canvasHeight/2 - 40);
+                    this.ctx.font = '20px Arial';
+                    this.ctx.fillText(`Final Score: ${this.score}`, canvasWidth/2 - 60, canvasHeight/2 + 60);
+                }
+            }
+        }
 
         // Initialize game
         document.addEventListener('DOMContentLoaded', () => {
