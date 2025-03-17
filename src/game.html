@@ -420,6 +420,228 @@
         .stars-icon {
             color: #FFD700;
         }
+
+        /* Shop styles */
+        #shopModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .shop-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .shop-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .shop-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .shop-items {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .shop-item {
+            display: flex;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .shop-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .shop-item.premium {
+            background: linear-gradient(135deg, #f9f9f9 0%, #f0f8ff 100%);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e0e0ff;
+        }
+        
+        .shop-item-image {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 12px;
+            background-color: #eee;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .shop-item-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .shop-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .shop-item-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: #333;
+        }
+        
+        .premium .shop-item-name {
+            color: #4a6da7;
+        }
+        
+        .shop-item-description {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .shop-item-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+        }
+        
+        .shop-button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .shop-button.buy {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .shop-button.buy:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+        
+        .shop-button.buy:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .shop-button.owned {
+            background-color: #ddd;
+            color: #666;
+        }
+        
+        .shop-button.select {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .shop-button.select:hover:not(:disabled) {
+            background-color: #0b7dda;
+        }
+        
+        .shop-button.select:disabled {
+            background-color: #bbdefb;
+            color: #64b5f6;
+        }
+        
+        .shop-button.stars {
+            background-color: #FFC107;
+            color: #333;
+        }
+        
+        .shop-button.stars:hover:not(:disabled) {
+            background-color: #ffb300;
+        }
+        
+        .shop-button.stars:disabled {
+            background-color: #ffe082;
+            color: #ffa000;
+        }
+        
+        .or-text {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .stars-icon {
+            color: #FFC107;
+            margin-right: 4px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .shop-container {
+                width: 95%;
+                padding: 15px;
+            }
+            
+            .shop-item {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .shop-item-image {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            .shop-item-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .shop-button {
+                width: 100%;
+            }
+            
+            .or-text {
+                margin: 4px 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -443,15 +665,14 @@
 
     <!-- Shop Modal -->
     <div id="shopModal">
-        <div class="shop-content">
-            <h2 class="shop-title">Магазин</h2>
-            <div class="shop-items">
-                <!-- Items will be added dynamically -->
+        <div class="shop-container">
+            <div class="shop-header">
+                <div class="shop-title">Магазин</div>
+                <button class="shop-close" onclick="game.closeShop()">&times;</button>
             </div>
-            <div class="shop-message" id="shopMessage"></div>
-            <div class="shop-buttons">
-                <button class="shop-button buy" id="buyButton">Купить</button>
-                <button class="shop-button close" id="closeShopButton">Закрыть</button>
+            <div class="shop-coins">Монеты: <span id="shopCoins">0</span> 🪙</div>
+            <div id="shopItems" class="shop-items">
+                <!-- Shop items will be dynamically added here -->
             </div>
         </div>
     </div>
@@ -607,7 +828,7 @@
 
         // Player class
         class Player {
-            constructor(x, y) {
+            constructor(x, y, skin) {
                 this.x = x;
                 this.y = y;
                 this.width = 40;
@@ -618,7 +839,7 @@
                 this.powerUpTimer = 0;
                 this.hasPowerUp = false;
                 this.powerUpType = null;
-                this.skin = localStorage.getItem('doodleJumpSkin') || 'default';
+                this.skin = skin;
                 this.blinkTimer = 0;
                 this.eyesClosed = false;
                 this.animationFrame = 0;
@@ -1341,12 +1562,58 @@
                 this.shopUnlocked = true; // Always unlocked for testing
                 this.ownedSkins = JSON.parse(localStorage.getItem('doodleJumpOwnedSkins')) || ['default'];
                 this.shopItems = [
-                    { id: 'default', name: 'Обычный', price: 0, emoji: '🟩', description: 'Базовый персонаж' },
-                    { id: 'hat', name: 'Шляпа', price: 30, emoji: '🎩', description: 'Защищает от одного падения' },
-                    { id: 'glasses', name: 'Очки', price: 30, emoji: '👓', description: 'Дают 1 раз прыгнуть в 2 раза выше' },
-                    { id: 'clothes', name: 'Одежда', price: 40, emoji: '👕', description: 'Просто придает стиль' },
-                    { id: 'gold', name: 'Золотой куб', price: 100, emoji: '💎', description: 'Увеличивает шанс выпадения двойных монет', premium: true },
-                    { id: 'fire', name: 'Огненный куб', price: 150, emoji: '🔥', description: 'Оставляет за собой огненный след', premium: true }
+                    {
+                        id: 'default',
+                        name: 'Обычный',
+                        description: 'Базовый персонаж без особых способностей',
+                        price: 0,
+                        owned: true,
+                        image: 'assets/player.png'
+                    },
+                    {
+                        id: 'hat',
+                        name: 'Шляпа',
+                        description: 'Защищает от одного падения. Активируется автоматически при падении.',
+                        price: 100,
+                        owned: false,
+                        image: 'assets/player_hat.png'
+                    },
+                    {
+                        id: 'glasses',
+                        name: 'Очки',
+                        description: 'Позволяет прыгнуть выше. Активируется двойным нажатием на экран.',
+                        price: 150,
+                        owned: false,
+                        image: 'assets/player_glasses.png'
+                    },
+                    {
+                        id: 'clothes',
+                        name: 'Одежда',
+                        description: 'Стильная одежда для вашего персонажа. Чисто косметический эффект.',
+                        price: 200,
+                        owned: false,
+                        image: 'assets/player_clothes.png'
+                    },
+                    {
+                        id: 'gold',
+                        name: 'Золотой куб',
+                        description: 'Увеличивает шанс получения двойных монет на 30%. Эффект постоянный.',
+                        price: 500,
+                        owned: false,
+                        image: 'assets/player_gold.png',
+                        premium: true,
+                        starPrice: 5
+                    },
+                    {
+                        id: 'fire',
+                        name: 'Огненный куб',
+                        description: 'Оставляет огненный след при прыжке. Активен постоянно во время игры.',
+                        price: 800,
+                        owned: false,
+                        image: 'assets/player_fire.png',
+                        premium: true,
+                        starPrice: 10
+                    }
                 ];
                 this.telegramStarsAvailable = false; // Флаг доступности Telegram Stars
                 this.telegramStarsPrices = {
@@ -1356,40 +1623,47 @@
             }
 
             init() {
-                const canvasWidth = this.canvas.width;
-                const canvasHeight = this.canvas.height;
+                // Set up canvas
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
                 
-                // Create player and ensure skin is properly set
-                this.player = new Player(canvasWidth / 2, canvasHeight - 100);
+                // Resize canvas to fit window
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
                 
-                // Make sure the skin is properly initialized from localStorage
-                const savedSkin = localStorage.getItem('doodleJumpSkin');
-                if (savedSkin && this.ownedSkins.includes(savedSkin)) {
-                    this.player.setSkin(savedSkin);
-                } else {
-                    // If saved skin is not owned or not valid, default to 'default'
-                    this.player.setSkin('default');
-                }
+                // Load high score from local storage
+                this.highScore = parseInt(localStorage.getItem('doodleJumpHighScore')) || 0;
                 
-                this.platforms = [];
-                this.score = 0;
-                this.gameOver = false;
-                this.cameraY = 0;
-                this.difficulty = 1;
-                this.instructionsHidden = false;
-                this.updateCoinCounter();
-                this.initShop();
-
-                // Create initial platforms
-                // First platform is directly under the player to prevent falling through
-                this.platforms.push(new Platform(canvasWidth / 2 - 40, canvasHeight - 50, 'normal'));
+                // Load coins from local storage
+                this.coins = parseInt(localStorage.getItem('doodleJumpCoins')) || 0;
                 
-                for (let i = 1; i < 7; i++) {
-                    this.generatePlatform(canvasHeight - i * 100);
-                }
+                // Initialize owned skins
+                this.ownedSkins = JSON.parse(localStorage.getItem('doodleJumpOwnedSkins')) || ['default'];
                 
-                // Show notification about active skin abilities
-                this.showSkinAbilityNotification();
+                // Check if device is mobile
+                this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                // Set up event listeners
+                this.setupEventListeners();
+                
+                // Show start screen
+                document.getElementById('startScreen').style.display = 'flex';
+                document.getElementById('gameUI').style.display = 'none';
+                
+                // Set up start button
+                document.getElementById('startButton').addEventListener('click', () => {
+                    this.startGame();
+                });
+                
+                // Set up shop button
+                document.getElementById('shopButton').addEventListener('click', () => {
+                    this.showShop();
+                });
+                
+                // Set up restart button
+                document.getElementById('restartButton').addEventListener('click', () => {
+                    this.startGame();
+                });
             }
 
             generatePlatform(y) {
@@ -1981,50 +2255,32 @@
                 if (!this.player || !this.player.skin || this.player.skin === 'default') return;
                 
                 let message = '';
+                let color = 'white';
                 switch(this.player.skin) {
                     case 'hat':
                         message = '🎩 Шляпа защитит вас от одного падения!';
+                        color = '#8B4513';
                         break;
                     case 'glasses':
-                        message = '👓 Очки позволят вам один раз прыгнуть в 2 раза выше!';
+                        message = '👓 Дважды нажмите для супер-прыжка!';
+                        color = '#000000';
                         break;
                     case 'clothes':
                         message = '👕 Вы выглядите стильно в этой одежде!';
+                        color = '#3F51B5';
                         break;
                     case 'gold':
-                        message = '💎 Золотой куб увеличивает шанс получения двойных монет!';
+                        message = '💎 Шанс двойных монет активирован!';
+                        color = '#FFD700';
                         break;
                     case 'fire':
-                        message = '🔥 Огненный куб оставляет за собой эффектный след!';
+                        message = '🔥 Огненный след активирован!';
+                        color = '#FF5722';
                         break;
                 }
                 
                 if (message) {
-                    // Create a temporary notification element
-                    const notification = document.createElement('div');
-                    notification.style.position = 'absolute';
-                    notification.style.top = '120px';
-                    notification.style.left = '50%';
-                    notification.style.transform = 'translateX(-50%)';
-                    notification.style.background = 'rgba(0, 0, 0, 0.7)';
-                    notification.style.color = 'white';
-                    notification.style.padding = '10px 15px';
-                    notification.style.borderRadius = '20px';
-                    notification.style.fontSize = '14px';
-                    notification.style.zIndex = '1000';
-                    notification.style.textAlign = 'center';
-                    notification.style.transition = 'opacity 0.5s ease';
-                    notification.textContent = message;
-                    
-                    document.getElementById('gameContainer').appendChild(notification);
-                    
-                    // Fade out and remove after 3 seconds
-                    setTimeout(() => {
-                        notification.style.opacity = '0';
-                        setTimeout(() => {
-                            notification.remove();
-                        }, 500);
-                    }, 3000);
+                    this.showNotification(message, color);
                 }
             }
             
@@ -2051,25 +2307,23 @@
             }
             
             // Метод для показа уведомлений
-            showNotification(message, color = 'white') {
+            showNotification(message, color = 'white', duration = 3000) {
                 // Create a temporary notification element
                 const notification = document.createElement('div');
                 notification.style.position = 'absolute';
-                notification.style.top = '50%';
+                notification.style.top = '10px';
                 notification.style.left = '50%';
-                notification.style.transform = 'translate(-50%, -50%)';
-                notification.style.background = 'rgba(0, 0, 0, 0.85)';
-                notification.style.color = '#FFFFFF'; // Always white text for better contrast
-                notification.style.padding = '15px 25px';
-                notification.style.borderRadius = '10px';
-                notification.style.fontSize = '16px';
-                notification.style.fontWeight = 'bold';
+                notification.style.transform = 'translateX(-50%) translateY(-20px)';
+                notification.style.background = 'rgba(0, 0, 0, 0.7)';
+                notification.style.color = color;
+                notification.style.padding = '6px 12px';
+                notification.style.borderRadius = '20px';
+                notification.style.fontSize = '14px';
+                notification.style.fontWeight = 'normal';
                 notification.style.zIndex = '1000';
                 notification.style.textAlign = 'center';
-                notification.style.boxShadow = `0 0 15px ${color}`;
-                notification.style.border = `2px solid ${color}`;
                 notification.style.opacity = '0';
-                notification.style.transition = 'all 0.3s ease';
+                notification.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
                 notification.textContent = message;
                 
                 document.getElementById('gameContainer').appendChild(notification);
@@ -2077,16 +2331,293 @@
                 // Fade in
                 setTimeout(() => {
                     notification.style.opacity = '1';
+                    notification.style.transform = 'translateX(-50%) translateY(0)';
                 }, 10);
                 
-                // Fade out and remove after 2 seconds
+                // Fade out and remove after specified duration
                 setTimeout(() => {
                     notification.style.opacity = '0';
-                    notification.style.transform = 'translate(-50%, -70%)';
+                    notification.style.transform = 'translateX(-50%) translateY(-20px)';
                     setTimeout(() => {
                         notification.remove();
                     }, 300);
-                }, 2000);
+                }, duration);
+            }
+
+            // Show shop modal
+            showShop() {
+                const shopModal = document.getElementById('shopModal');
+                const shopItemsContainer = document.getElementById('shopItems');
+                shopItemsContainer.innerHTML = '';
+                
+                this.shopItems.forEach(item => {
+                    const isOwned = this.ownedSkins.includes(item.id);
+                    const canAfford = this.coins >= item.price;
+                    
+                    const itemElement = document.createElement('div');
+                    itemElement.className = `shop-item ${item.premium ? 'premium' : ''}`;
+                    
+                    // Item image
+                    const imageContainer = document.createElement('div');
+                    imageContainer.className = 'shop-item-image';
+                    
+                    if (item.image) {
+                        const img = document.createElement('img');
+                        img.src = item.image;
+                        img.alt = item.name;
+                        imageContainer.appendChild(img);
+                    } else {
+                        // Fallback to emoji if no image
+                        const emoji = document.createElement('span');
+                        emoji.textContent = item.emoji || '🎮';
+                        emoji.style.fontSize = '32px';
+                        imageContainer.appendChild(emoji);
+                    }
+                    
+                    itemElement.appendChild(imageContainer);
+                    
+                    // Item info
+                    const infoContainer = document.createElement('div');
+                    infoContainer.className = 'shop-item-info';
+                    
+                    const nameElement = document.createElement('div');
+                    nameElement.className = 'shop-item-name';
+                    nameElement.textContent = item.name;
+                    infoContainer.appendChild(nameElement);
+                    
+                    const descElement = document.createElement('div');
+                    descElement.className = 'shop-item-description';
+                    descElement.textContent = item.description;
+                    infoContainer.appendChild(descElement);
+                    
+                    itemElement.appendChild(infoContainer);
+                    
+                    // Button container
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'shop-item-buttons';
+                    
+                    if (isOwned) {
+                        const ownedButton = document.createElement('button');
+                        ownedButton.className = 'shop-button owned';
+                        ownedButton.textContent = 'Куплено';
+                        ownedButton.disabled = true;
+                        buttonContainer.appendChild(ownedButton);
+                        
+                        const selectButton = document.createElement('button');
+                        selectButton.className = 'shop-button select';
+                        selectButton.textContent = this.player.skin === item.id ? 'Выбрано' : 'Выбрать';
+                        selectButton.disabled = this.player.skin === item.id;
+                        selectButton.onclick = () => {
+                            this.player.skin = item.id;
+                            localStorage.setItem('doodleJumpSelectedSkin', item.id);
+                            this.showNotification(`Выбран скин: ${item.name}`, '#4CAF50');
+                            this.showSkinAbilityNotification();
+                            this.showShop(); // Refresh shop to update buttons
+                        };
+                        buttonContainer.appendChild(selectButton);
+                    } else {
+                        // Regular coin purchase button
+                        const buyButton = document.createElement('button');
+                        buyButton.className = 'shop-button buy';
+                        buyButton.textContent = `${item.price} 🪙`;
+                        buyButton.disabled = !canAfford;
+                        
+                        if (canAfford) {
+                            buyButton.onclick = () => {
+                                this.coins -= item.price;
+                                localStorage.setItem('doodleJumpCoins', this.coins);
+                                this.ownedSkins.push(item.id);
+                                localStorage.setItem('doodleJumpOwnedSkins', JSON.stringify(this.ownedSkins));
+                                this.showNotification(`Куплен скин: ${item.name}!`, '#4CAF50');
+                                this.showShop(); // Refresh shop
+                            };
+                        }
+                        
+                        buttonContainer.appendChild(buyButton);
+                        
+                        // Stars purchase button for premium items
+                        if (item.premium && item.starPrice) {
+                            const orText = document.createElement('span');
+                            orText.className = 'or-text';
+                            orText.textContent = 'или';
+                            buttonContainer.appendChild(orText);
+                            
+                            const starsButton = document.createElement('button');
+                            starsButton.className = 'shop-button stars';
+                            starsButton.textContent = `${item.starPrice} ⭐`;
+                            
+                            if (this.telegramStarsAvailable) {
+                                starsButton.onclick = () => {
+                                    // Implement Telegram Stars purchase logic
+                                    this.showNotification('Покупка за Telegram Stars будет доступна скоро!', '#FFC107');
+                                };
+                            } else {
+                                starsButton.disabled = true;
+                                starsButton.title = 'Недоступно в этой версии';
+                            }
+                            
+                            buttonContainer.appendChild(starsButton);
+                        }
+                    }
+                    
+                    itemElement.appendChild(buttonContainer);
+                    shopItemsContainer.appendChild(itemElement);
+                });
+                
+                shopModal.style.display = 'flex';
+            }
+
+            // Start the game
+            startGame() {
+                this.gameStarted = true;
+                this.gameOver = false;
+                this.score = 0;
+                this.platforms = [];
+                this.coins = parseInt(localStorage.getItem('doodleJumpCoins')) || 0;
+                this.powerUps = [];
+                this.particles = new ParticleSystem();
+                
+                // Create player
+                const selectedSkin = localStorage.getItem('doodleJumpSelectedSkin') || 'default';
+                this.player = new Player(this.canvas.width / 2, this.canvas.height - 100, selectedSkin);
+                
+                // Create initial platforms
+                for (let i = 0; i < 7; i++) {
+                    const x = Math.random() * (this.canvas.width - 60);
+                    const y = i === 0 ? this.canvas.height - 50 : this.canvas.height - 100 - i * 80;
+                    this.platforms.push(new Platform(x, y, 'normal'));
+                }
+                
+                // Show skin ability notification if applicable
+                this.showSkinAbilityNotification();
+                
+                // Show start message with instructions
+                this.showStartMessage();
+                
+                // Start game loop
+                this.gameLoop();
+                
+                // Hide start screen
+                document.getElementById('startScreen').style.display = 'none';
+                
+                // Show game UI
+                document.getElementById('gameUI').style.display = 'block';
+            }
+            
+            // Show start message with game instructions
+            showStartMessage() {
+                const instructions = this.isMobile ? 
+                    'Наклоняйте устройство для движения. Используйте особые способности скинов!' : 
+                    'Используйте стрелки или A/D для движения. Особые способности активируются автоматически или по двойному клику.';
+                
+                this.showNotification(instructions, '#2196F3', 5000);
+                
+                // If player has a skin with special abilities, show additional instructions
+                if (this.player.skin && this.player.skin !== 'default') {
+                    setTimeout(() => {
+                        this.showSkinAbilityNotification();
+                    }, 5500);
+                }
+            }
+
+            // Close shop modal
+            closeShop() {
+                document.getElementById('shopModal').style.display = 'none';
+            }
+
+            // Set up event listeners
+            setupEventListeners() {
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                        this.leftPressed = true;
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                        this.rightPressed = true;
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                        this.leftPressed = false;
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                        this.rightPressed = false;
+                    }
+                });
+                
+                // Touch controls for mobile
+                if (this.isMobile) {
+                    window.addEventListener('deviceorientation', (e) => {
+                        if (this.gameStarted && !this.gameOver) {
+                            const tilt = e.gamma; // Left-right tilt in degrees
+                            
+                            if (tilt > 5) { // Tilting right
+                                this.rightPressed = true;
+                                this.leftPressed = false;
+                            } else if (tilt < -5) { // Tilting left
+                                this.leftPressed = true;
+                                this.rightPressed = false;
+                            } else { // Neutral position
+                                this.leftPressed = false;
+                                this.rightPressed = false;
+                            }
+                        }
+                    });
+                } else {
+                    // Mouse controls for desktop
+                    this.canvas.addEventListener('mousemove', (e) => {
+                        if (this.gameStarted && !this.gameOver) {
+                            const rect = this.canvas.getBoundingClientRect();
+                            const mouseX = e.clientX - rect.left;
+                            
+                            if (mouseX < this.player.x - 10) {
+                                this.leftPressed = true;
+                                this.rightPressed = false;
+                            } else if (mouseX > this.player.x + 10) {
+                                this.rightPressed = true;
+                                this.leftPressed = false;
+                            } else {
+                                this.leftPressed = false;
+                                this.rightPressed = false;
+                            }
+                        }
+                    });
+                }
+                
+                // Double tap for super jump with glasses
+                let lastTap = 0;
+                this.canvas.addEventListener('click', (e) => {
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTap;
+                    
+                    if (tapLength < 300 && tapLength > 0) {
+                        // Double tap detected
+                        if (this.gameStarted && !this.gameOver && this.player.skin === 'glasses') {
+                            this.player.velocity.y = -15; // Super jump
+                            this.showNotification('Супер-прыжок!', '#000000');
+                        }
+                    }
+                    
+                    lastTap = currentTime;
+                });
+            }
+
+            // Resize canvas to fit window
+            resizeCanvas() {
+                const gameContainer = document.getElementById('gameContainer');
+                const containerWidth = gameContainer.clientWidth;
+                const containerHeight = gameContainer.clientHeight;
+                
+                // Set canvas dimensions
+                this.canvas.width = Math.min(400, containerWidth);
+                this.canvas.height = Math.min(600, containerHeight);
+                
+                // Update game elements if needed
+                if (this.player) {
+                    // Ensure player stays within bounds after resize
+                    this.player.x = Math.min(Math.max(this.player.x, 0), this.canvas.width);
+                }
             }
         }
 
