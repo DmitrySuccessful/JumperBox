@@ -1474,6 +1474,7 @@
                 this.instructionsHidden = false;
                 this.shopUnlocked = true; // Always unlocked for testing
                 this.ownedSkins = JSON.parse(localStorage.getItem('doodleJumpOwnedSkins')) || ['default'];
+                this.notificationTimeout = null; // For tracking notification timeouts
                 this.shopItems = [
                     {
                         id: 'default',
@@ -1816,7 +1817,7 @@
                         this.showTeleportEffect();
                         
                         // Создаем уведомление о спасении
-                        this.showNotification('🎩 Шляпа спасла вас от падения!', '#8B4513');
+                        this.showNotification('🎩 Шляпа спасла вас от падения!');
                         
                         // Эффект использования защиты - больше частиц
                         for (let i = 0; i < 3; i++) {
@@ -1840,7 +1841,7 @@
                 if (this.player.extraJumpAvailable === false && this.player.skin === 'glasses' && 
                     this.player.velocityY < -20) {
                     // Показываем уведомление о высоком прыжке
-                    this.showNotification('👓 Супер-прыжок активирован!', '#000000');
+                    this.showNotification('👓 Супер-прыжок активирован!');
                     
                     // Создаем эффект высокого прыжка
                     for (let i = 0; i < 10; i++) {
@@ -1855,7 +1856,7 @@
                 if (this.player.doubleCoinsChance > 0 && this.player.skin === 'gold' && 
                     Math.random() < 0.01) {
                     // Периодически показываем напоминание о бонусе
-                    this.showNotification('💎 Шанс двойных монет активен!', '#FFD700');
+                    this.showNotification('💎 Шанс двойных монет активен!');
                 }
                 
                 // Создание двойных монет на платформах для золотого скина
@@ -2161,32 +2162,26 @@
                 if (!this.player || !this.player.skin || this.player.skin === 'default') return;
                 
                 let message = '';
-                let color = 'white';
                 switch(this.player.skin) {
                     case 'hat':
                         message = '🎩 Шляпа защитит вас от одного падения!';
-                        color = '#8B4513';
                         break;
                     case 'glasses':
                         message = '👓 Дважды нажмите для супер-прыжка!';
-                        color = '#000000';
                         break;
                     case 'clothes':
                         message = '👕 Вы выглядите стильно в этой одежде!';
-                        color = '#3F51B5';
                         break;
                     case 'gold':
                         message = '💎 Шанс двойных монет активирован!';
-                        color = '#FFD700';
                         break;
                     case 'fire':
                         message = '🔥 Огненный след активирован!';
-                        color = '#FF5722';
                         break;
                 }
                 
                 if (message) {
-                    this.showNotification(message, color);
+                    this.showNotification(message);
                 }
             }
             
@@ -2236,25 +2231,28 @@
             }
             
             // Метод для показа уведомлений
-            showNotification(message, color = 'white', duration = 3000) {
+            showNotification(message, color = '#FFD700', duration = 3000) {
+                // Проверка, чтобы не создавать дублирующие уведомления
+                if (document.getElementById('customNotification')) return;
+                
                 // Create a temporary notification element
                 const notification = document.createElement('div');
+                notification.id = 'customNotification';
                 notification.style.position = 'absolute';
                 notification.style.top = '10px';
                 notification.style.left = '50%';
-                notification.style.transform = 'translateX(-50%) translateY(-20px)';
-                notification.style.background = 'rgba(0, 0, 0, 0.8)';
+                notification.style.transform = 'translateX(-50%)';
+                notification.style.background = '#000';
                 notification.style.color = color;
-                notification.style.padding = '8px 16px';
-                notification.style.borderRadius = '20px';
+                notification.style.padding = '10px 20px';
+                notification.style.borderRadius = '12px';
                 notification.style.fontSize = '16px';
                 notification.style.fontWeight = 'bold';
                 notification.style.zIndex = '1000';
                 notification.style.textAlign = 'center';
                 notification.style.opacity = '0';
-                notification.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                notification.style.transition = 'opacity 0.4s ease';
                 notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
-                notification.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.5)';
                 notification.textContent = message;
                 
                 document.getElementById('gameContainer').appendChild(notification);
@@ -2262,15 +2260,16 @@
                 // Fade in
                 setTimeout(() => {
                     notification.style.opacity = '1';
-                    notification.style.transform = 'translateX(-50%) translateY(0)';
-                }, 10);
+                }, 50);
                 
-                // Fade out and remove after specified duration
-                setTimeout(() => {
+                // Store the timeout to be able to clear it if needed
+                this.notificationTimeout = setTimeout(() => {
                     notification.style.opacity = '0';
-                    notification.style.transform = 'translateX(-50%) translateY(-20px)';
                     setTimeout(() => {
-                        notification.remove();
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                        this.notificationTimeout = null;
                     }, 400);
                 }, duration);
             }
@@ -2350,7 +2349,7 @@
                         selectButton.onclick = () => {
                             this.player.setSkin(item.id);
                             localStorage.setItem('doodleJumpSelectedSkin', item.id);
-                            this.showNotification(`Выбран скин: ${item.name}`, '#4CAF50');
+                            this.showNotification(`Выбран скин: ${item.name}`);
                             this.showSkinAbilityNotification();
                             this.showShop(); // Refresh shop to update buttons
                         };
@@ -2369,7 +2368,7 @@
                                 this.ownedSkins.push(item.id);
                                 localStorage.setItem('doodleJumpOwnedSkins', JSON.stringify(this.ownedSkins));
                                 this.updateCoinCounter();
-                                this.showNotification(`Куплен скин: ${item.name}!`, '#4CAF50');
+                                this.showNotification(`Куплен скин: ${item.name}!`);
                                 this.showShop(); // Refresh shop
                             };
                         }
@@ -2390,7 +2389,7 @@
                             if (this.telegramStarsAvailable) {
                                 starsButton.onclick = () => {
                                     // Implement Telegram Stars purchase logic
-                                    this.showNotification('Покупка за Telegram Stars будет доступна скоро!', '#FFC107');
+                                    this.showNotification('Покупка за Telegram Stars будет доступна скоро!');
                                 };
                             } else {
                                 starsButton.disabled = true;
@@ -2408,8 +2407,24 @@
                 shopModal.style.display = 'flex';
             }
 
+            // Clear any existing notifications
+            clearNotifications() {
+                if (this.notificationTimeout) {
+                    clearTimeout(this.notificationTimeout);
+                    this.notificationTimeout = null;
+                }
+                
+                const existingNotification = document.getElementById('customNotification');
+                if (existingNotification && existingNotification.parentNode) {
+                    existingNotification.parentNode.removeChild(existingNotification);
+                }
+            }
+            
             // Start the game
             startGame() {
+                // Clear any existing notifications
+                this.clearNotifications();
+                
                 this.gameStarted = true;
                 this.gameOver = false;
                 this.score = 0;
@@ -2500,6 +2515,7 @@
             
             // Show start message with game instructions
             showStartMessage() {
+                // Show instructions at the bottom of the screen
                 const instructions = document.getElementById('gameInstructions');
                 if (instructions) {
                     instructions.style.display = 'block';
@@ -2511,10 +2527,11 @@
                 }
                 
                 // If player has a skin with special abilities, show ability notification
+                // with a slight delay to avoid overlapping with other notifications
                 if (this.player.skin && this.player.skin !== 'default') {
                     setTimeout(() => {
                         this.showSkinAbilityNotification();
-                    }, 2000);
+                    }, 1000);
                 }
             }
 
@@ -2598,7 +2615,7 @@
                         // Double tap detected
                         if (this.gameStarted && !this.gameOver && this.player.skin === 'glasses') {
                             this.player.velocity.y = -15; // Super jump
-                            this.showNotification('Супер-прыжок!', '#000000');
+                            this.showNotification('Супер-прыжок!');
                         }
                     }
                     
@@ -2609,7 +2626,7 @@
                 this.canvas.addEventListener('dblclick', () => {
                     if (this.player && this.player.skin === 'glasses' && this.player.extraJumpAvailable) {
                         if (this.player.activateDoubleJump()) {
-                            this.showNotification('👓 Супер-прыжок активирован!', '#000000');
+                            this.showNotification('👓 Супер-прыжок активирован!');
                             
                             // Create visual effect for double jump
                             for (let i = 0; i < 15; i++) {
@@ -2795,7 +2812,7 @@
                     } else if (game.player.skin === 'glasses' && game.player.extraJumpAvailable) {
                         // Activate double jump with Space key
                         if (game.player.activateDoubleJump()) {
-                            game.showNotification('👓 Супер-прыжок активирован!', '#000000');
+                            game.showNotification('👓 Супер-прыжок активирован!');
                             
                             // Create visual effect for double jump
                             for (let i = 0; i < 15; i++) {
@@ -2843,7 +2860,7 @@
                     // Double tap detected
                     if (game.player.skin === 'glasses' && game.player.extraJumpAvailable) {
                         if (game.player.activateDoubleJump()) {
-                            game.showNotification('👓 Супер-прыжок активирован!', '#000000');
+                            game.showNotification('👓 Супер-прыжок активирован!');
                             
                             // Create visual effect for double jump
                             for (let i = 0; i < 15; i++) {
