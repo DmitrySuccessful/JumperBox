@@ -1104,12 +1104,6 @@
             }
 
             jump(force = -12) {
-                // Если есть бонус очков, прыгаем в 2 раза выше один раз
-                if (this.extraJumpAvailable && this.skin === 'glasses') {
-                    force = -24;
-                    this.extraJumpAvailable = false;
-                }
-                
                 this.velocityY = force;
                 this.isJumping = true;
             }
@@ -1187,6 +1181,16 @@
                     default: return '#FFFFFF';
                 }
             }
+
+            // New method for manual double jump activation
+            activateDoubleJump() {
+                if (this.extraJumpAvailable && this.skin === 'glasses') {
+                    this.velocityY = -24; // Double the normal jump force
+                    this.extraJumpAvailable = false;
+                    return true;
+                }
+                return false;
+            }
         }
 
         // Platform class
@@ -1200,6 +1204,7 @@
                 this.broken = false;
                 this.direction = 1;
                 this.speed = type === 'moving' ? 2 : 0;
+                this.hasDoubleCoins = false;
                 
                 // Add power-up with 10% chance
                 if (Math.random() < 0.1) {
@@ -1213,10 +1218,28 @@
                 
                 // Add coin with 25% chance (but not if there's already a power-up)
                 if (!this.powerUp && Math.random() < 0.25) {
-                    this.coin = new Coin(
-                        this.x + this.width / 2 - 10,
-                        this.y - 30
-                    );
+                    // Determine if we should spawn double coins (30% chance)
+                    this.hasDoubleCoins = Math.random() < 0.3;
+                    
+                    if (this.hasDoubleCoins) {
+                        // Create main coin
+                        this.coin = new Coin(
+                            this.x + this.width / 2 - 20,
+                            this.y - 30
+                        );
+                        
+                        // Create second coin
+                        this.secondCoin = new Coin(
+                            this.x + this.width / 2 + 5,
+                            this.y - 30
+                        );
+                    } else {
+                        // Just one coin
+                        this.coin = new Coin(
+                            this.x + this.width / 2 - 10,
+                            this.y - 30
+                        );
+                    }
                 }
             }
             
@@ -1252,8 +1275,21 @@
                         this.coin.x = this.x + this.width / 2 - 10;
                         this.coin.update();
                     }
-                } else if (this.coin && !this.coin.collected) {
-                    this.coin.update();
+                    
+                    // Обновляем позицию второй монеты, если она есть
+                    if (this.secondCoin && !this.secondCoin.collected) {
+                        this.secondCoin.x = this.x + this.width / 2 + 5;
+                        this.secondCoin.update();
+                    }
+                } else {
+                    if (this.coin && !this.coin.collected) {
+                        this.coin.update();
+                    }
+                    
+                    // Обновляем вторую монету, если она есть
+                    if (this.secondCoin && !this.secondCoin.collected) {
+                        this.secondCoin.update();
+                    }
                 }
             }
 
@@ -1279,6 +1315,11 @@
                 
                 if (this.coin && !this.coin.collected) {
                     this.coin.draw(ctx);
+                }
+                
+                // Отрисовываем вторую монету, если она есть
+                if (this.secondCoin && !this.secondCoin.collected) {
+                    this.secondCoin.draw(ctx);
                 }
             }
         }
@@ -1404,6 +1445,7 @@
                     const playerCenterY = this.player.y + this.player.height / 2;
                     
                     this.platforms.forEach(platform => {
+                        // Притягивание первой монеты
                         if (platform.coin && !platform.coin.collected) {
                             const coinCenterX = platform.coin.x + platform.coin.width / 2;
                             const coinCenterY = platform.coin.y + platform.coin.height / 2;
@@ -1437,6 +1479,35 @@
                                     localStorage.setItem('doodleJumpCoins', this.coins);
                                     this.updateCoinCounter();
                                     this.particles.createCoinEffect(platform.coin.x, platform.coin.y);
+                                }
+                            }
+                        }
+                        
+                        // Притягивание второй монеты, если она есть
+                        if (platform.secondCoin && !platform.secondCoin.collected) {
+                            const coinCenterX = platform.secondCoin.x + platform.secondCoin.width / 2;
+                            const coinCenterY = platform.secondCoin.y + platform.secondCoin.height / 2;
+                            
+                            // Расчет расстояния между игроком и монетой
+                            const dx = playerCenterX - coinCenterX;
+                            const dy = playerCenterY - coinCenterY;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            // Если монета в радиусе действия магнита
+                            if (distance < magnetRadius) {
+                                // Притягиваем монету к игроку
+                                const speed = 5;
+                                const angle = Math.atan2(dy, dx);
+                                platform.secondCoin.x += Math.cos(angle) * speed;
+                                platform.secondCoin.y += Math.sin(angle) * speed;
+                                
+                                // Проверяем, достигла ли монета игрока
+                                if (distance < 20) {
+                                    platform.secondCoin.collected = true;
+                                    this.coins += 1;
+                                    localStorage.setItem('doodleJumpCoins', this.coins);
+                                    this.updateCoinCounter();
+                                    this.particles.createCoinEffect(platform.secondCoin.x, platform.secondCoin.y);
                                 }
                             }
                         }
@@ -1477,6 +1548,25 @@
                         localStorage.setItem('doodleJumpCoins', this.coins);
                         this.updateCoinCounter();
                         this.particles.createCoinEffect(platform.coin.x, platform.coin.y);
+                        
+                        // Check if shop should be unlocked
+                        if (this.coins >= 50 && !this.shopUnlocked) {
+                            this.shopUnlocked = true;
+                        }
+                    }
+                    
+                    // Second coin collision
+                    if (platform.secondCoin && !platform.secondCoin.collected &&
+                        this.player.x + this.player.width > platform.secondCoin.x &&
+                        this.player.x < platform.secondCoin.x + platform.secondCoin.width &&
+                        this.player.y + this.player.height > platform.secondCoin.y &&
+                        this.player.y < platform.secondCoin.y + platform.secondCoin.height) {
+                        platform.secondCoin.collected = true;
+                        
+                        this.coins += 1;
+                        localStorage.setItem('doodleJumpCoins', this.coins);
+                        this.updateCoinCounter();
+                        this.particles.createCoinEffect(platform.secondCoin.x, platform.secondCoin.y);
                         
                         // Check if shop should be unlocked
                         if (this.coins >= 50 && !this.shopUnlocked) {
@@ -1946,28 +2036,64 @@
                 // Create a temporary notification element
                 const notification = document.createElement('div');
                 notification.style.position = 'absolute';
-                notification.style.top = '120px';
+                notification.style.top = '50%';
                 notification.style.left = '50%';
-                notification.style.transform = 'translateX(-50%)';
-                notification.style.background = 'rgba(0, 0, 0, 0.7)';
-                notification.style.color = color || 'white';
-                notification.style.padding = '10px 15px';
-                notification.style.borderRadius = '20px';
-                notification.style.fontSize = '14px';
+                notification.style.transform = 'translate(-50%, -50%)';
+                notification.style.background = 'rgba(0, 0, 0, 0.85)';
+                notification.style.color = '#FFFFFF'; // Always white text for better contrast
+                notification.style.padding = '15px 25px';
+                notification.style.borderRadius = '10px';
+                notification.style.fontSize = '16px';
+                notification.style.fontWeight = 'bold';
                 notification.style.zIndex = '1000';
                 notification.style.textAlign = 'center';
-                notification.style.transition = 'opacity 0.5s ease';
+                notification.style.boxShadow = `0 0 15px ${color}`;
+                notification.style.border = `2px solid ${color}`;
+                notification.style.opacity = '0';
+                notification.style.transition = 'all 0.3s ease';
                 notification.textContent = message;
                 
                 document.getElementById('gameContainer').appendChild(notification);
                 
+                // Fade in
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                }, 10);
+                
                 // Fade out and remove after 2 seconds
                 setTimeout(() => {
                     notification.style.opacity = '0';
+                    notification.style.transform = 'translate(-50%, -70%)';
                     setTimeout(() => {
                         notification.remove();
-                    }, 500);
+                    }, 300);
                 }, 2000);
+            }
+            
+            // Проверка на получение двойных монет (для золотого скина)
+            if (this.player.doubleCoinsChance > 0 && this.player.skin === 'gold' && 
+                Math.random() < 0.01) {
+                // Периодически показываем напоминание о бонусе
+                this.showNotification('💎 Шанс двойных монет активен!', '#FFD700');
+            }
+            
+            // New method to spawn double coins on platforms when player has gold skin
+            spawnDoubleCoinsOnPlatforms() {
+                // If player has gold skin, add a second coin to some platforms with 30% chance
+                if (this.player && this.player.skin === 'gold') {
+                    this.platforms.forEach(platform => {
+                        // If platform has exactly one coin and not collected yet
+                        if (platform.coin && !platform.coin.collected && !platform.hasDoubledCoins && Math.random() < 0.3) {
+                            // Add a second coin next to the existing one
+                            const secondCoin = new Coin(
+                                platform.coin.x + 25, // Position it to the right of the first coin
+                                platform.coin.y
+                            );
+                            platform.secondCoin = secondCoin;
+                            platform.hasDoubledCoins = true; // Mark to avoid adding more coins
+                        }
+                    });
+                }
             }
         }
 
@@ -2064,8 +2190,23 @@
             window.addEventListener('keydown', (e) => {
                 if (!game) return;
                 
-                if (e.code === 'Space' && game.gameOver) {
-                    restartGame();
+                if (e.code === 'Space') {
+                    if (game.gameOver) {
+                        restartGame();
+                    } else if (game.player.skin === 'glasses' && game.player.extraJumpAvailable) {
+                        // Activate double jump with Space key
+                        if (game.player.activateDoubleJump()) {
+                            game.showNotification('👓 Супер-прыжок активирован!', '#000000');
+                            
+                            // Create visual effect for double jump
+                            for (let i = 0; i < 15; i++) {
+                                game.particles.createJumpEffect(
+                                    game.player.x + Math.random() * game.player.width, 
+                                    game.player.y + game.player.height + Math.random() * 20
+                                );
+                            }
+                        }
+                    }
                 } else if (e.code === 'ArrowLeft') {
                     game.player.velocityX = -5;
                     game.hideInstructions();
@@ -2088,11 +2229,38 @@
             // Mobile touch controls
             const touchLeft = document.getElementById('leftTouch');
             const touchRight = document.getElementById('rightTouch');
+            
+            // Variables for double tap detection
+            let lastTapTime = 0;
+            const doubleTapDelay = 300; // ms between taps to count as double tap
 
             function handleTouchStart(direction) {
                 if (!game) return;
                 game.player.velocityX = direction === 'left' ? -5 : 5;
                 game.hideInstructions();
+                
+                // Check for double tap to activate double jump
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTapTime;
+                
+                if (tapLength < doubleTapDelay && tapLength > 0) {
+                    // Double tap detected
+                    if (game.player.skin === 'glasses' && game.player.extraJumpAvailable) {
+                        if (game.player.activateDoubleJump()) {
+                            game.showNotification('👓 Супер-прыжок активирован!', '#000000');
+                            
+                            // Create visual effect for double jump
+                            for (let i = 0; i < 15; i++) {
+                                game.particles.createJumpEffect(
+                                    game.player.x + Math.random() * game.player.width, 
+                                    game.player.y + game.player.height + Math.random() * 20
+                                );
+                            }
+                        }
+                    }
+                }
+                
+                lastTapTime = currentTime;
             }
 
             function handleTouchEnd() {
