@@ -51,6 +51,11 @@
             background: rgba(0, 0, 0, 0.5);
             padding: 10px;
             border-radius: 10px;
+            transition: opacity 0.5s ease;
+        }
+
+        .hidden {
+            opacity: 0;
         }
 
         /* Touch Controls */
@@ -134,7 +139,50 @@
             left: 50%;
             transform: translate(-50%, 50px);
             display: none;
+            z-index: 300;
+        }
+
+        /* Shop Button */
+        #shopBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            font-size: 16px;
+            background: #9C27B0;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
             z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #shopBtn.locked::after {
+            content: "🔒";
+            margin-left: 5px;
+        }
+
+        /* Coin counter */
+        #coinCounter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 16px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+        }
+
+        #coinCounter::before {
+            content: "🪙";
+            margin-right: 5px;
         }
 
         @media (max-width: 768px) {
@@ -177,10 +225,12 @@
             <button id="startBtn" class="game-button">Start Game</button>
         </div>
         <button id="restartBtn" class="game-button">Restart Game</button>
+        <div id="coinCounter">0</div>
+        <button id="shopBtn" class="locked">Shop</button>
         <div id="leftTouch" class="touch-zone"></div>
         <div id="rightTouch" class="touch-zone"></div>
     </div>
-    <div class="instructions">
+    <div class="instructions" id="gameInstructions">
         Use ← → arrows to move<br>
         Jump on platforms to climb higher!<br>
         <span id="mobileInstructions">On mobile, touch left/right side to move</span>
@@ -239,12 +289,68 @@
                 }
             }
 
+            createCoinEffect(x, y) {
+                const colors = [
+                    '255, 215, 0',
+                    '255, 223, 0',
+                    '255, 200, 0'
+                ];
+
+                for (let i = 0; i < 10; i++) {
+                    this.particles.push(
+                        new Particle(
+                            x + Math.random() * 20,
+                            y + Math.random() * 20,
+                            colors[Math.floor(Math.random() * colors.length)]
+                        )
+                    );
+                }
+            }
+
             update() {
                 this.particles = this.particles.filter(particle => particle.update());
             }
 
             draw(ctx) {
                 this.particles.forEach(particle => particle.draw(ctx));
+            }
+        }
+
+        // Coin class
+        class Coin {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.collected = false;
+                this.rotation = 0;
+            }
+
+            update() {
+                this.rotation += 0.05;
+            }
+
+            draw(ctx) {
+                if (this.collected) return;
+                
+                ctx.save();
+                ctx.translate(this.x + this.width/2, this.y + this.height/2);
+                ctx.rotate(this.rotation);
+                
+                // Draw coin
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.width/2, this.height/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw highlight
+                ctx.fillStyle = '#FFF8E1';
+                ctx.beginPath();
+                ctx.ellipse(-3, -3, 3, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
             }
         }
 
@@ -344,11 +450,20 @@
                 this.direction = 1;
                 this.speed = type === 'moving' ? 2 : 0;
                 
+                // Add power-up with 10% chance
                 if (Math.random() < 0.1) {
                     this.powerUp = new PowerUp(
                         this.x + this.width / 2 - 15,
                         this.y - 35,
                         Math.random() < 0.5 ? 'spring' : 'star'
+                    );
+                }
+                
+                // Add coin with 25% chance (but not if there's already a power-up)
+                if (!this.powerUp && Math.random() < 0.25) {
+                    this.coin = new Coin(
+                        this.x + this.width / 2 - 10,
+                        this.y - 30
                     );
                 }
             }
@@ -363,6 +478,13 @@
                     if (this.powerUp && !this.powerUp.collected) {
                         this.powerUp.x = this.x + this.width / 2 - 15;
                     }
+                    
+                    if (this.coin && !this.coin.collected) {
+                        this.coin.x = this.x + this.width / 2 - 10;
+                        this.coin.update();
+                    }
+                } else if (this.coin && !this.coin.collected) {
+                    this.coin.update();
                 }
             }
 
@@ -385,6 +507,10 @@
                 if (this.powerUp && !this.powerUp.collected) {
                     this.powerUp.draw(ctx);
                 }
+                
+                if (this.coin && !this.coin.collected) {
+                    this.coin.draw(ctx);
+                }
             }
         }
 
@@ -395,11 +521,15 @@
                 this.ctx = ctx;
                 this.score = 0;
                 this.highScore = parseInt(localStorage.getItem('doodleJumpHighScore')) || 0;
+                this.coins = parseInt(localStorage.getItem('doodleJumpCoins')) || 0;
                 this.gameOver = false;
                 this.platforms = [];
                 this.particles = new ParticleSystem();
                 this.difficulty = 1;
                 this.cameraY = 0;
+                this.instructionsHidden = false;
+                this.shopUnlocked = this.coins >= 50;
+                this.updateShopButton();
             }
 
             init() {
@@ -412,9 +542,15 @@
                 this.gameOver = false;
                 this.cameraY = 0;
                 this.difficulty = 1;
+                this.instructionsHidden = false;
+                this.updateCoinCounter();
+                this.updateShopButton();
 
                 // Create initial platforms
-                for (let i = 0; i < 7; i++) {
+                // First platform is directly under the player to prevent falling through
+                this.platforms.push(new Platform(canvasWidth / 2 - 40, canvasHeight - 50, 'normal'));
+                
+                for (let i = 1; i < 7; i++) {
                     this.generatePlatform(canvasHeight - i * 100);
                 }
             }
@@ -449,6 +585,9 @@
                         if (platform.powerUp) {
                             platform.powerUp.y += diff;
                         }
+                        if (platform.coin) {
+                            platform.coin.y += diff;
+                        }
                     });
 
                     // Remove platforms that are off screen
@@ -476,6 +615,25 @@
                         this.player.activatePowerUp(platform.powerUp.type);
                     }
                     
+                    // Coin collision
+                    if (platform.coin && !platform.coin.collected &&
+                        this.player.x + this.player.width > platform.coin.x &&
+                        this.player.x < platform.coin.x + platform.coin.width &&
+                        this.player.y + this.player.height > platform.coin.y &&
+                        this.player.y < platform.coin.y + platform.coin.height) {
+                        platform.coin.collected = true;
+                        this.coins++;
+                        localStorage.setItem('doodleJumpCoins', this.coins);
+                        this.updateCoinCounter();
+                        this.particles.createCoinEffect(platform.coin.x, platform.coin.y);
+                        
+                        // Check if shop should be unlocked
+                        if (this.coins >= 50 && !this.shopUnlocked) {
+                            this.shopUnlocked = true;
+                            this.updateShopButton();
+                        }
+                    }
+                    
                     // Platform collision
                     if (!platform.broken && this.player.velocityY > 0 && 
                         this.player.x + this.player.width > platform.x &&
@@ -498,6 +656,7 @@
                         this.highScore = this.score;
                         localStorage.setItem('doodleJumpHighScore', this.highScore);
                     }
+                    document.getElementById('restartBtn').style.display = 'block';
                 }
             }
 
@@ -530,7 +689,28 @@
                     this.ctx.font = '40px Arial';
                     this.ctx.fillText('Game Over!', canvasWidth/2 - 100, canvasHeight/2 - 40);
                     this.ctx.font = '20px Arial';
-                    this.ctx.fillText(`Final Score: ${this.score}`, canvasWidth/2 - 60, canvasHeight/2 + 60);
+                    this.ctx.fillText(`Final Score: ${this.score}`, canvasWidth/2 - 60, canvasHeight/2);
+                    this.ctx.fillText(`Coins: ${this.coins}`, canvasWidth/2 - 40, canvasHeight/2 + 30);
+                }
+            }
+            
+            hideInstructions() {
+                if (!this.instructionsHidden) {
+                    document.getElementById('gameInstructions').classList.add('hidden');
+                    this.instructionsHidden = true;
+                }
+            }
+            
+            updateCoinCounter() {
+                document.getElementById('coinCounter').textContent = this.coins;
+            }
+            
+            updateShopButton() {
+                const shopBtn = document.getElementById('shopBtn');
+                if (this.shopUnlocked) {
+                    shopBtn.classList.remove('locked');
+                } else {
+                    shopBtn.classList.add('locked');
                 }
             }
         }
@@ -542,6 +722,8 @@
             const startScreen = document.getElementById('startScreen');
             const startBtn = document.getElementById('startBtn');
             const restartBtn = document.getElementById('restartBtn');
+            const shopBtn = document.getElementById('shopBtn');
+            const instructions = document.getElementById('gameInstructions');
             
             let game = null;
             let gameStarted = false;
@@ -579,9 +761,6 @@
                 if (game) {
                     game.update();
                     game.draw();
-                    if (game.gameOver) {
-                        restartBtn.style.display = 'block';
-                    }
                     requestAnimationFrame(gameLoop);
                 }
             }
@@ -596,13 +775,26 @@
                 gameStarted = true;
             }
 
+            // Shop button handler
+            shopBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!game || !game.shopUnlocked) return;
+                alert('Shop coming soon! You have ' + game.coins + ' coins.');
+            });
+
             // Start button handlers
             startBtn.addEventListener('click', startGame);
-            startBtn.addEventListener('touchend', startGame, { passive: false });
+            startBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                startGame();
+            }, { passive: false });
 
             // Restart button handlers
             restartBtn.addEventListener('click', restartGame);
-            restartBtn.addEventListener('touchend', restartGame, { passive: false });
+            restartBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                restartGame();
+            }, { passive: false });
 
             // Desktop controls
             window.addEventListener('keydown', (e) => {
@@ -612,8 +804,10 @@
                     restartGame();
                 } else if (e.code === 'ArrowLeft') {
                     game.player.velocityX = -5;
+                    game.hideInstructions();
                 } else if (e.code === 'ArrowRight') {
                     game.player.velocityX = 5;
+                    game.hideInstructions();
                 }
             });
 
@@ -634,6 +828,7 @@
             function handleTouchStart(direction) {
                 if (!game) return;
                 game.player.velocityX = direction === 'left' ? -5 : 5;
+                game.hideInstructions();
             }
 
             function handleTouchEnd() {
