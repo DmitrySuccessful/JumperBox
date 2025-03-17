@@ -409,6 +409,51 @@
     </div>
 
     <script>
+        // Глобальные переменные для изображений скинов
+        const skinImages = {
+            hat: new Image(),
+            cap: new Image(),
+            glasses: new Image()
+        };
+
+        // Загрузка изображений
+        function loadSkinImages() {
+            skinImages.hat.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSz6-Gl7pT1EO-OLp0VgcqmNSuaUtIvbabpaw&s';
+            skinImages.cap.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0a41haAAbVOkpGVOJrncZ3LUZabp-9065Ag&s';
+            skinImages.glasses.src = 'https://cdn-icons-png.flaticon.com/512/27/27106.png';
+            
+            // Проверка загрузки изображений
+            return new Promise((resolve) => {
+                let loadedCount = 0;
+                const totalImages = Object.keys(skinImages).length;
+                
+                const checkAllLoaded = () => {
+                    loadedCount++;
+                    if (loadedCount === totalImages) {
+                        resolve();
+                    }
+                };
+                
+                skinImages.hat.onload = checkAllLoaded;
+                skinImages.cap.onload = checkAllLoaded;
+                skinImages.glasses.onload = checkAllLoaded;
+                
+                // Обработка ошибок загрузки
+                skinImages.hat.onerror = () => {
+                    console.error('Failed to load hat image');
+                    checkAllLoaded();
+                };
+                skinImages.cap.onerror = () => {
+                    console.error('Failed to load cap image');
+                    checkAllLoaded();
+                };
+                skinImages.glasses.onerror = () => {
+                    console.error('Failed to load glasses image');
+                    checkAllLoaded();
+                };
+            });
+        }
+
         // Particle System
         class Particle {
             constructor(x, y, color) {
@@ -605,53 +650,81 @@
                     case 'glasses':
                         this.drawGlasses(ctx);
                         break;
-                    case 'cap-chain':
-                        this.drawCapAndChain(ctx);
+                    case 'cap':
+                        this.drawCap(ctx);
                         break;
                 }
             }
             
             drawHat(ctx) {
-                // Draw a simple hat
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(this.x + 5, this.y - 10, 30, 10);
-                ctx.fillRect(this.x + 10, this.y - 20, 20, 10);
+                // Проверяем, загружено ли изображение
+                if (skinImages.hat.complete) {
+                    // Размеры и позиция шляпы
+                    const hatWidth = this.width * 1.2;
+                    const hatHeight = hatWidth * (skinImages.hat.height / skinImages.hat.width);
+                    const hatX = this.x - (hatWidth - this.width) / 2;
+                    const hatY = this.y - hatHeight + 5;
+                    
+                    // Рисуем шляпу
+                    ctx.drawImage(skinImages.hat, hatX, hatY, hatWidth, hatHeight);
+                } else {
+                    // Запасной вариант, если изображение не загружено
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(this.x + 5, this.y - 10, 30, 10);
+                    ctx.fillRect(this.x + 10, this.y - 20, 20, 10);
+                }
             }
             
             drawGlasses(ctx) {
-                // Draw glasses
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(this.x + 15, this.y + 15, 5, 0, Math.PI * 2);
-                ctx.arc(this.x + 25, this.y + 15, 5, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                // Bridge of glasses
-                ctx.beginPath();
-                ctx.moveTo(this.x + 20, this.y + 15);
-                ctx.lineTo(this.x + 20, this.y + 15);
-                ctx.stroke();
+                // Проверяем, загружено ли изображение
+                if (skinImages.glasses.complete) {
+                    // Размеры и позиция очков
+                    const glassesWidth = this.width * 0.8;
+                    const glassesHeight = glassesWidth * (skinImages.glasses.height / skinImages.glasses.width);
+                    const glassesX = this.x + (this.width - glassesWidth) / 2;
+                    const glassesY = this.y + 10;
+                    
+                    // Рисуем очки
+                    ctx.drawImage(skinImages.glasses, glassesX, glassesY, glassesWidth, glassesHeight);
+                } else {
+                    // Запасной вариант, если изображение не загружено
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(this.x + 15, this.y + 15, 5, 0, Math.PI * 2);
+                    ctx.arc(this.x + 25, this.y + 15, 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Bridge of glasses
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 20, this.y + 15);
+                    ctx.lineTo(this.x + 20, this.y + 15);
+                    ctx.stroke();
+                }
             }
             
-            drawCapAndChain(ctx) {
-                // Draw cap
-                ctx.fillStyle = '#1E88E5';
-                ctx.beginPath();
-                ctx.arc(this.x + 20, this.y + 5, 15, Math.PI, 0, false);
-                ctx.fill();
-                
-                // Draw cap visor
-                ctx.fillStyle = '#0D47A1';
-                ctx.fillRect(this.x + 5, this.y + 5, 30, 5);
-                
-                // Draw chain
-                ctx.strokeStyle = '#FFD700';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(this.x + 5, this.y + 30);
-                ctx.lineTo(this.x + 35, this.y + 30);
-                ctx.stroke();
+            drawCap(ctx) {
+                // Проверяем, загружено ли изображение
+                if (skinImages.cap.complete) {
+                    // Размеры и позиция кепки
+                    const capWidth = this.width * 1.2;
+                    const capHeight = capWidth * (skinImages.cap.height / skinImages.cap.width);
+                    const capX = this.x - (capWidth - this.width) / 2;
+                    const capY = this.y - capHeight / 2;
+                    
+                    // Рисуем кепку
+                    ctx.drawImage(skinImages.cap, capX, capY, capWidth, capHeight);
+                } else {
+                    // Запасной вариант, если изображение не загружено
+                    ctx.fillStyle = '#1E88E5';
+                    ctx.beginPath();
+                    ctx.arc(this.x + 20, this.y + 5, 15, Math.PI, 0, false);
+                    ctx.fill();
+                    
+                    // Draw cap visor
+                    ctx.fillStyle = '#0D47A1';
+                    ctx.fillRect(this.x + 5, this.y + 5, 30, 5);
+                }
             }
 
             jump(force = -12) {
@@ -766,9 +839,9 @@
                 this.shopUnlocked = true; // Always unlocked for testing
                 this.ownedSkins = JSON.parse(localStorage.getItem('doodleJumpOwnedSkins')) || ['default'];
                 this.shopItems = [
-                    { id: 'hat', name: 'Hat', price: 10, emoji: '🎩' },
-                    { id: 'glasses', name: 'Glasses', price: 20, emoji: '👓' },
-                    { id: 'cap-chain', name: 'Cap & Chain', price: 30, emoji: '🧢' }
+                    { id: 'hat', name: 'Hat', price: 30, emoji: '🎩' },
+                    { id: 'glasses', name: 'Glasses', price: 30, emoji: '👓' },
+                    { id: 'cap', name: 'Cap', price: 40, emoji: '🧢' }
                 ];
             }
 
@@ -1261,6 +1334,13 @@
 
             // Initial setup
             resizeCanvas();
+            
+            // Загрузка изображений скинов перед началом игры
+            loadSkinImages().then(() => {
+                console.log('Skin images loaded successfully');
+            }).catch(error => {
+                console.error('Error loading skin images:', error);
+            });
         });
     </script>
 </body>
