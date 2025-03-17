@@ -1425,6 +1425,9 @@
                         if (platform.coin) {
                             platform.coin.y += diff;
                         }
+                        if (platform.secondCoin) {
+                            platform.secondCoin.y += diff;
+                        }
                     });
 
                     // Remove platforms that are off screen
@@ -1661,6 +1664,22 @@
                     Math.random() < 0.01) {
                     // Периодически показываем напоминание о бонусе
                     this.showNotification('💎 Шанс двойных монет активен!', '#FFD700');
+                }
+                
+                // Создание двойных монет на платформах для золотого скина
+                if (this.player && this.player.skin === 'gold') {
+                    this.platforms.forEach(platform => {
+                        // Если на платформе есть одна монета и она еще не собрана
+                        if (platform.coin && !platform.coin.collected && !platform.hasDoubledCoins && Math.random() < 0.3) {
+                            // Добавляем вторую монету рядом с существующей
+                            const secondCoin = new Coin(
+                                platform.coin.x + 25, // Позиционируем справа от первой монеты
+                                platform.coin.y
+                            );
+                            platform.secondCoin = secondCoin;
+                            platform.hasDoubledCoins = true; // Отмечаем, чтобы избежать добавления большего количества монет
+                        }
+                    });
                 }
             }
 
@@ -2068,32 +2087,6 @@
                         notification.remove();
                     }, 300);
                 }, 2000);
-            }
-            
-            // Проверка на получение двойных монет (для золотого скина)
-            if (this.player.doubleCoinsChance > 0 && this.player.skin === 'gold' && 
-                Math.random() < 0.01) {
-                // Периодически показываем напоминание о бонусе
-                this.showNotification('💎 Шанс двойных монет активен!', '#FFD700');
-            }
-            
-            // New method to spawn double coins on platforms when player has gold skin
-            spawnDoubleCoinsOnPlatforms() {
-                // If player has gold skin, add a second coin to some platforms with 30% chance
-                if (this.player && this.player.skin === 'gold') {
-                    this.platforms.forEach(platform => {
-                        // If platform has exactly one coin and not collected yet
-                        if (platform.coin && !platform.coin.collected && !platform.hasDoubledCoins && Math.random() < 0.3) {
-                            // Add a second coin next to the existing one
-                            const secondCoin = new Coin(
-                                platform.coin.x + 25, // Position it to the right of the first coin
-                                platform.coin.y
-                            );
-                            platform.secondCoin = secondCoin;
-                            platform.hasDoubledCoins = true; // Mark to avoid adding more coins
-                        }
-                    });
-                }
             }
         }
 
