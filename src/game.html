@@ -446,6 +446,14 @@
             margin-right: 4px;
         }
         
+        .shop-message {
+            margin-top: 10px;
+            color: #4CAF50;
+            font-size: 14px;
+            text-align: center;
+            min-height: 20px;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 480px) {
             .shop-container {
@@ -477,6 +485,25 @@
                 margin: 4px 0;
             }
         }
+
+        /* Shop Button in Game */
+        .shop-button-ingame {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+            background: #9C27B0;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .shop-button-ingame:hover {
+            background: #7B1FA2;
+        }
     </style>
 </head>
 <body>
@@ -490,6 +517,7 @@
         <div id="gameUI" style="display: none;">
             <button id="restartBtn" class="game-button">Перезапуск</button>
             <div id="coinCounter">0</div>
+            <button id="shopBtnInGame" class="game-button shop-button-ingame">Магазин</button>
         </div>
         <div id="leftTouch" class="touch-zone"></div>
         <div id="rightTouch" class="touch-zone"></div>
@@ -510,6 +538,10 @@
             <div class="shop-coins">Монеты: <span id="shopCoins">0</span> 🪙</div>
             <div id="shopItems" class="shop-items">
                 <!-- Shop items will be dynamically added here -->
+            </div>
+            <div class="shop-buttons">
+                <button id="buyButton" class="shop-button buy">Купить</button>
+                <div id="shopMessage" class="shop-message"></div>
             </div>
         </div>
     </div>
@@ -1405,7 +1437,8 @@
                         description: 'Базовый персонаж без особых способностей',
                         price: 0,
                         owned: true,
-                        image: 'assets/player.png'
+                        image: 'assets/player.png',
+                        emoji: '🟩'
                     },
                     {
                         id: 'hat',
@@ -1413,7 +1446,8 @@
                         description: 'Защищает от одного падения. Активируется автоматически при падении.',
                         price: 100,
                         owned: false,
-                        image: 'assets/player_hat.png'
+                        image: 'assets/player_hat.png',
+                        emoji: '🎩'
                     },
                     {
                         id: 'glasses',
@@ -1421,7 +1455,8 @@
                         description: 'Позволяет прыгнуть выше. Активируется двойным нажатием на экран.',
                         price: 150,
                         owned: false,
-                        image: 'assets/player_glasses.png'
+                        image: 'assets/player_glasses.png',
+                        emoji: '👓'
                     },
                     {
                         id: 'clothes',
@@ -1429,7 +1464,8 @@
                         description: 'Стильная одежда для вашего персонажа. Чисто косметический эффект.',
                         price: 200,
                         owned: false,
-                        image: 'assets/player_clothes.png'
+                        image: 'assets/player_clothes.png',
+                        emoji: '👕'
                     },
                     {
                         id: 'gold',
@@ -1438,6 +1474,7 @@
                         price: 500,
                         owned: false,
                         image: 'assets/player_gold.png',
+                        emoji: '🟨',
                         premium: true,
                         starPrice: 5
                     },
@@ -1448,6 +1485,7 @@
                         price: 800,
                         owned: false,
                         image: 'assets/player_fire.png',
+                        emoji: '🔥',
                         premium: true,
                         starPrice: 10
                     }
@@ -1855,7 +1893,12 @@
                     
                     const imageElement = document.createElement('div');
                     imageElement.className = 'shop-item-image';
-                    imageElement.textContent = item.emoji;
+                    
+                    // Use emoji instead of image
+                    const emoji = document.createElement('span');
+                    emoji.textContent = item.emoji || '🎮';
+                    emoji.style.fontSize = '32px';
+                    imageElement.appendChild(emoji);
                     
                     const nameElement = document.createElement('div');
                     nameElement.className = 'shop-item-name';
@@ -2191,6 +2234,12 @@
                     return;
                 }
                 
+                // Update shop coins display
+                const shopCoins = document.getElementById('shopCoins');
+                if (shopCoins) {
+                    shopCoins.textContent = this.coins;
+                }
+                
                 const shopItemsContainer = document.getElementById('shopItems');
                 if (!shopItemsContainer) {
                     console.error('Shop items container not found!');
@@ -2210,18 +2259,11 @@
                     const imageContainer = document.createElement('div');
                     imageContainer.className = 'shop-item-image';
                     
-                    if (item.image) {
-                        const img = document.createElement('img');
-                        img.src = item.image;
-                        img.alt = item.name;
-                        imageContainer.appendChild(img);
-                    } else {
-                        // Fallback to emoji if no image
-                        const emoji = document.createElement('span');
-                        emoji.textContent = item.emoji || '🎮';
-                        emoji.style.fontSize = '32px';
-                        imageContainer.appendChild(emoji);
-                    }
+                    // Use emoji instead of image
+                    const emoji = document.createElement('span');
+                    emoji.textContent = item.emoji || '🎮';
+                    emoji.style.fontSize = '32px';
+                    imageContainer.appendChild(emoji);
                     
                     itemElement.appendChild(imageContainer);
                     
@@ -2257,8 +2299,8 @@
                         selectButton.textContent = this.player.skin === item.id ? 'Выбрано' : 'Выбрать';
                         selectButton.disabled = this.player.skin === item.id;
                         selectButton.onclick = () => {
-                            this.player.skin = item.id;
-                            localStorage.setItem('doodleJumpSelectedSkin', item.id);
+                            this.player.setSkin(item.id);
+                            localStorage.setItem('doodleJumpSkin', item.id);
                             this.showNotification(`Выбран скин: ${item.name}`, '#4CAF50');
                             this.showSkinAbilityNotification();
                             this.showShop(); // Refresh shop to update buttons
@@ -2277,6 +2319,7 @@
                                 localStorage.setItem('doodleJumpCoins', this.coins);
                                 this.ownedSkins.push(item.id);
                                 localStorage.setItem('doodleJumpOwnedSkins', JSON.stringify(this.ownedSkins));
+                                this.updateCoinCounter();
                                 this.showNotification(`Куплен скин: ${item.name}!`, '#4CAF50');
                                 this.showShop(); // Refresh shop
                             };
@@ -2362,7 +2405,7 @@
             // Show start message with game instructions
             showStartMessage() {
                 const instructions = this.isMobile ? 
-                    'Наклоняйте устройство для движения. Используйте особые способности скинов!' : 
+                    'Нажимайте на левую/правую часть экрана для движения. Используйте особые способности скинов!' : 
                     'Используйте стрелки или A/D для движения. Особые способности активируются автоматически или по двойному клику.';
                 
                 this.showNotification(instructions, '#2196F3', 5000);
@@ -2596,6 +2639,16 @@
                 e.preventDefault();
                 handleOpenShop(e);
             }, { passive: false });
+            
+            // Добавляем обработчик для кнопки магазина в игровом интерфейсе
+            const shopBtnInGame = document.getElementById('shopBtnInGame');
+            if (shopBtnInGame) {
+                shopBtnInGame.addEventListener('click', handleOpenShop);
+                shopBtnInGame.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    handleOpenShop(e);
+                }, { passive: false });
+            }
             
             // Добавляем обработчик для кнопки закрытия магазина
             const closeShopBtn = document.querySelector('.shop-close');
