@@ -650,10 +650,12 @@
         <div id="startScreen">
             <h1 id="gameTitle">JumperBox</h1>
             <button id="startBtn" class="game-button">Начать игру</button>
+            <button id="shopBtn" class="game-button">Магазин</button>
         </div>
-        <button id="restartBtn" class="game-button">Перезапуск</button>
-        <div id="coinCounter">0</div>
-        <button id="shopBtn">Магазин</button>
+        <div id="gameUI" style="display: none;">
+            <button id="restartBtn" class="game-button">Перезапуск</button>
+            <div id="coinCounter">0</div>
+        </div>
         <div id="leftTouch" class="touch-zone"></div>
         <div id="rightTouch" class="touch-zone"></div>
     </div>
@@ -1991,9 +1993,9 @@
             }
             
             hideInstructions() {
-                if (!this.instructionsHidden) {
-                    document.getElementById('gameInstructions').classList.add('hidden');
-                    this.instructionsHidden = true;
+                const instructions = document.getElementById('gameInstructions');
+                if (instructions) {
+                    instructions.style.display = 'none';
                 }
             }
             
@@ -2622,21 +2624,31 @@
         }
 
         // Initialize game
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
+            const container = document.getElementById('gameContainer');
             const startScreen = document.getElementById('startScreen');
             const startBtn = document.getElementById('startBtn');
             const restartBtn = document.getElementById('restartBtn');
             const shopBtn = document.getElementById('shopBtn');
-            const instructions = document.getElementById('gameInstructions');
+            const leftTouch = document.getElementById('leftTouch');
+            const rightTouch = document.getElementById('rightTouch');
             
             let game = null;
             let gameStarted = false;
-
+            
+            // Initialize game
+            function initGame() {
+                game = new Game(canvas, ctx);
+                game.init();
+            }
+            
+            // Resize canvas based on device
             function resizeCanvas() {
-                const container = document.getElementById('gameContainer');
-                if (window.innerWidth <= 768) {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile) {
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
                     container.style.width = '100%';
@@ -2648,21 +2660,8 @@
                     container.style.height = '600px';
                 }
             }
-
-            function startGame(e) {
-                if (e) {
-                    e.preventDefault();
-                }
-                if (!gameStarted) {
-                    startScreen.style.display = 'none';
-                    resizeCanvas();
-                    game = new Game(canvas, ctx);
-                    game.init();
-                    gameLoop();
-                    gameStarted = true;
-                }
-            }
-
+            
+            // Game loop
             function gameLoop() {
                 if (game) {
                     game.update();
@@ -2670,53 +2669,60 @@
                     requestAnimationFrame(gameLoop);
                 }
             }
-
-            function restartGame(e) {
-                if (e) {
-                    e.preventDefault();
+            
+            // Start game
+            function handleStartGame(e) {
+                if (e) e.preventDefault();
+                if (!gameStarted) {
+                    initGame();
+                    game.startGame();
+                    gameLoop();
+                    gameStarted = true;
                 }
-                restartBtn.style.display = 'none';
-                shopBtn.style.display = 'none';
-                game = new Game(canvas, ctx);
-                game.init();
+            }
+            
+            // Restart game
+            function handleRestartGame(e) {
+                if (e) e.preventDefault();
+                initGame();
+                game.startGame();
                 gameStarted = true;
             }
-
-            // Shop button handler
-            shopBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (!game) return;
-                game.openShop();
-            });
             
-            // Добавляем обработчик для мобильных устройств
-            shopBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                if (!game) return;
-                game.openShop();
-            }, { passive: false });
-
-            // Start button handlers
-            startBtn.addEventListener('click', startGame);
+            // Open shop
+            function handleOpenShop(e) {
+                if (e) e.preventDefault();
+                if (game) {
+                    game.showShop();
+                }
+            }
+            
+            // Set up event listeners
+            startBtn.addEventListener('click', handleStartGame);
             startBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                startGame();
+                handleStartGame(e);
             }, { passive: false });
-
-            // Restart button handlers
-            restartBtn.addEventListener('click', restartGame);
+            
+            restartBtn.addEventListener('click', handleRestartGame);
             restartBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                restartGame();
+                handleRestartGame(e);
             }, { passive: false });
-
+            
+            shopBtn.addEventListener('click', handleOpenShop);
+            shopBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handleOpenShop(e);
+            }, { passive: false });
+            
             // Desktop controls
             window.addEventListener('keydown', (e) => {
                 if (!game) return;
                 
                 if (e.code === 'Space') {
                     if (game.gameOver) {
-                        restartGame();
+                        handleRestartGame();
                     } else if (game.player.skin === 'glasses' && game.player.extraJumpAvailable) {
                         // Activate double jump with Space key
                         if (game.player.activateDoubleJump()) {
@@ -2739,7 +2745,7 @@
                     game.hideInstructions();
                 }
             });
-
+            
             window.addEventListener('keyup', (e) => {
                 if (!game) return;
                 
@@ -2749,15 +2755,12 @@
                     game.player.velocityX = 0;
                 }
             });
-
-            // Mobile touch controls
-            const touchLeft = document.getElementById('leftTouch');
-            const touchRight = document.getElementById('rightTouch');
             
+            // Mobile touch controls
             // Variables for double tap detection
             let lastTapTime = 0;
             const doubleTapDelay = 300; // ms between taps to count as double tap
-
+            
             function handleTouchStart(direction) {
                 if (!game) return;
                 game.player.velocityX = direction === 'left' ? -5 : 5;
@@ -2786,38 +2789,38 @@
                 
                 lastTapTime = currentTime;
             }
-
+            
             function handleTouchEnd() {
                 if (!game) return;
                 game.player.velocityX = 0;
             }
-
-            touchLeft.addEventListener('touchstart', (e) => {
+            
+            leftTouch.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 handleTouchStart('left');
             }, { passive: false });
-
-            touchRight.addEventListener('touchstart', (e) => {
+            
+            rightTouch.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 handleTouchStart('right');
             }, { passive: false });
-
-            touchLeft.addEventListener('touchend', (e) => {
+            
+            leftTouch.addEventListener('touchend', (e) => {
                 e.preventDefault();
                 handleTouchEnd();
             }, { passive: false });
-
-            touchRight.addEventListener('touchend', (e) => {
+            
+            rightTouch.addEventListener('touchend', (e) => {
                 e.preventDefault();
                 handleTouchEnd();
             }, { passive: false });
-
+            
             // Handle window resize
             window.addEventListener('resize', resizeCanvas);
             window.addEventListener('orientationchange', () => {
                 setTimeout(resizeCanvas, 100);
             });
-
+            
             // Initial setup
             resizeCanvas();
         });
