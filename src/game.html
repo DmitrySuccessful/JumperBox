@@ -145,8 +145,9 @@
         /* Shop Button */
         #shopBtn {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 120px);
             padding: 8px 15px;
             font-size: 16px;
             background: #9C27B0;
@@ -154,22 +155,17 @@
             border: none;
             border-radius: 15px;
             cursor: pointer;
-            z-index: 100;
-            display: flex;
+            z-index: 300;
+            display: none;
             align-items: center;
             justify-content: center;
-        }
-
-        #shopBtn.locked::after {
-            content: "🔒";
-            margin-left: 5px;
         }
 
         /* Coin counter */
         #coinCounter {
             position: absolute;
-            top: 10px;
-            right: 80px;
+            top: 90px;
+            left: 10px;
             background: rgba(0, 0, 0, 0.5);
             color: white;
             padding: 5px 10px;
@@ -387,7 +383,7 @@
         </div>
         <button id="restartBtn" class="game-button">Restart Game</button>
         <div id="coinCounter">0</div>
-        <button id="shopBtn" class="locked">Shop</button>
+        <button id="shopBtn">Shop</button>
         <div id="leftTouch" class="touch-zone"></div>
         <div id="rightTouch" class="touch-zone"></div>
     </div>
@@ -774,7 +770,6 @@
                     { id: 'glasses', name: 'Glasses', price: 20, emoji: '👓' },
                     { id: 'cap-chain', name: 'Cap & Chain', price: 30, emoji: '🧢' }
                 ];
-                this.updateShopButton();
             }
 
             init() {
@@ -789,7 +784,6 @@
                 this.difficulty = 1;
                 this.instructionsHidden = false;
                 this.updateCoinCounter();
-                this.updateShopButton();
                 this.initShop();
 
                 // Create initial platforms
@@ -876,7 +870,6 @@
                         // Check if shop should be unlocked
                         if (this.coins >= 50 && !this.shopUnlocked) {
                             this.shopUnlocked = true;
-                            this.updateShopButton();
                         }
                     }
                     
@@ -903,6 +896,7 @@
                         localStorage.setItem('doodleJumpHighScore', this.highScore);
                     }
                     document.getElementById('restartBtn').style.display = 'block';
+                    document.getElementById('shopBtn').style.display = 'flex';
                 }
             }
 
@@ -948,15 +942,6 @@
             
             updateCoinCounter() {
                 document.getElementById('coinCounter').textContent = this.coins;
-            }
-            
-            updateShopButton() {
-                const shopBtn = document.getElementById('shopBtn');
-                if (this.shopUnlocked) {
-                    shopBtn.classList.remove('locked');
-                } else {
-                    shopBtn.classList.add('locked');
-                }
             }
             
             initShop() {
@@ -1174,6 +1159,7 @@
                     e.preventDefault();
                 }
                 restartBtn.style.display = 'none';
+                shopBtn.style.display = 'none';
                 game = new Game(canvas, ctx);
                 game.init();
                 gameStarted = true;
@@ -1182,14 +1168,14 @@
             // Shop button handler
             shopBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (!game || !game.shopUnlocked) return;
+                if (!game) return;
                 game.openShop();
             });
             
             // Добавляем обработчик для мобильных устройств
             shopBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                if (!game || !game.shopUnlocked) return;
+                if (!game) return;
                 game.openShop();
             }, { passive: false });
 
