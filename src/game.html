@@ -23,11 +23,15 @@
 
         #gameContainer {
             position: relative;
-            width: 400px;
+            width: 100%;
+            max-width: 400px;
             height: 600px;
+            max-height: 80vh;
+            margin: 0 auto;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             border-radius: 10px;
             overflow: hidden;
+            background-color: #E0F7FA;
         }
 
         #gameCanvas {
@@ -35,6 +39,8 @@
             border-radius: 10px;
             display: block;
             touch-action: none;
+            width: 100%;
+            height: 100%;
         }
 
         .instructions {
@@ -144,21 +150,24 @@
 
         /* Shop Button */
         #shopBtn {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, 120px);
-            padding: 8px 15px;
-            font-size: 16px;
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 20px;
             background: #9C27B0;
             color: white;
             border: none;
-            border-radius: 15px;
+            border-radius: 25px;
             cursor: pointer;
             z-index: 300;
-            display: none;
-            align-items: center;
-            justify-content: center;
+        }
+
+        #shopBtn:hover {
+            background: #7B1FA2;
+            transform: translateY(-2px);
+        }
+
+        #shopBtn:active {
+            transform: translateY(0);
         }
 
         /* Coin counter */
@@ -188,7 +197,9 @@
 
             #gameContainer {
                 width: 100%;
+                max-width: 100%;
                 height: 100vh;
+                max-height: 100vh;
                 border-radius: 0;
                 box-shadow: none;
             }
@@ -198,31 +209,35 @@
             }
 
             .instructions {
-                bottom: 40px;
-                font-size: 16px;
+                bottom: 50px;
+                font-size: 12px;
+                padding: 8px;
+                background: rgba(0, 0, 0, 0.7);
             }
-
+            
             #gameTitle {
                 font-size: 28px;
+                margin-bottom: 20px;
             }
-
+            
             .game-button {
-                font-size: 20px;
                 padding: 12px 30px;
+                font-size: 20px;
             }
             
             /* Мобильные стили для магазина */
-            .shop-content {
-                width: 90%;
-                max-height: 90%;
+            .shop-container {
+                width: 95%;
+                max-height: 90vh;
+                padding: 15px;
             }
             
-            .shop-items {
-                grid-template-columns: repeat(2, 1fr);
+            .shop-title {
+                font-size: 20px;
             }
             
             .shop-item {
-                padding: 8px;
+                padding: 10px;
             }
             
             .shop-item-image {
@@ -231,8 +246,8 @@
             }
             
             .shop-button {
-                padding: 12px 15px;
-                font-size: 18px;
+                padding: 6px 10px;
+                font-size: 14px;
             }
             
             /* Убедимся, что z-index магазина выше, чем у других элементов */
@@ -242,186 +257,6 @@
         }
 
         /* Shop Modal */
-        #shopModal {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 300;
-        }
-
-        .shop-content {
-            background: #2a2a2a;
-            border-radius: 15px;
-            padding: 20px;
-            width: 80%;
-            max-width: 350px;
-            max-height: 80%;
-            overflow-y: auto;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
-
-        .shop-title {
-            color: white;
-            font-size: 24px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .shop-items {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .shop-item {
-            background: #3a3a3a;
-            border-radius: 10px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-            border: 2px solid transparent;
-        }
-
-        .shop-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .shop-item.selected {
-            border-color: #2196F3;
-            box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
-        }
-
-        .shop-item.owned {
-            border-color: #9E9E9E;
-        }
-
-        .shop-item.owned.selected {
-            border-color: #2196F3;
-            box-shadow: 0 0 10px rgba(33, 150, 243, 0.5);
-        }
-
-        .shop-item.premium {
-            background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-
-        .shop-item.premium .shop-item-name {
-            color: #FFD700;
-        }
-
-        .shop-item.premium .shop-item-image {
-            background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 100%);
-        }
-
-        .shop-item-image {
-            width: 60px;
-            height: 60px;
-            background: #4a4a4a;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-        }
-
-        .shop-item-name {
-            color: white;
-            font-size: 14px;
-            margin-bottom: 5px;
-            text-align: center;
-        }
-
-        .shop-item-price {
-            color: #FFD700;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-        }
-
-        .shop-item-price::before {
-            content: "🪙";
-            margin-right: 5px;
-        }
-
-        .shop-item-description {
-            color: #BBBBBB;
-            font-size: 12px;
-            text-align: center;
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        .shop-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .shop-button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
-        .shop-button.buy {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .shop-button.buy:disabled {
-            background: #7e7e7e;
-            cursor: not-allowed;
-        }
-
-        .shop-button.close {
-            background: #f44336;
-            color: white;
-        }
-
-        .shop-button.stars {
-            background: #673AB7;
-            color: white;
-            margin-top: 10px;
-        }
-
-        .shop-button.stars::before {
-            content: "⭐";
-            margin-right: 5px;
-        }
-
-        .shop-message {
-            color: white;
-            font-size: 16px;
-            margin-top: 10px;
-            text-align: center;
-            min-height: 20px;
-        }
-
-        .or-text {
-            font-size: 12px;
-            opacity: 0.7;
-            margin: 0 3px;
-        }
-
-        .stars-icon {
-            color: #FFD700;
-        }
-
-        /* Shop styles */
         #shopModal {
             display: none;
             position: fixed;
@@ -670,7 +505,7 @@
         <div class="shop-container">
             <div class="shop-header">
                 <div class="shop-title">Магазин</div>
-                <button class="shop-close" onclick="game.closeShop()">&times;</button>
+                <button class="shop-close">&times;</button>
             </div>
             <div class="shop-coins">Монеты: <span id="shopCoins">0</span> 🪙</div>
             <div id="shopItems" class="shop-items">
@@ -2631,17 +2466,22 @@
             // Resize canvas to fit window
             resizeCanvas() {
                 const gameContainer = document.getElementById('gameContainer');
+                if (!gameContainer) {
+                    console.error('Game container not found!');
+                    return;
+                }
+                
                 const containerWidth = gameContainer.clientWidth;
                 const containerHeight = gameContainer.clientHeight;
                 
                 // Set canvas dimensions
-                this.canvas.width = Math.min(400, containerWidth);
-                this.canvas.height = Math.min(600, containerHeight);
+                this.canvas.width = containerWidth;
+                this.canvas.height = containerHeight;
                 
                 // Update game elements if needed
                 if (this.player) {
                     // Ensure player stays within bounds after resize
-                    this.player.x = Math.min(Math.max(this.player.x, 0), this.canvas.width);
+                    this.player.x = Math.min(Math.max(this.player.x, 0), this.canvas.width - this.player.width);
                 }
             }
 
@@ -2679,17 +2519,27 @@
             // Resize canvas based on device
             function resizeCanvas() {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const containerWidth = container.clientWidth;
+                const containerHeight = container.clientHeight;
                 
                 if (isMobile) {
+                    // На мобильных устройствах используем всю доступную область
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
                     container.style.width = '100%';
                     container.style.height = '100%';
+                    container.style.maxWidth = '100%';
+                    container.style.maxHeight = '100vh';
                 } else {
-                    canvas.width = 400;
-                    canvas.height = 600;
-                    container.style.width = '400px';
-                    container.style.height = '600px';
+                    // На десктопе используем фиксированный размер
+                    canvas.width = containerWidth;
+                    canvas.height = containerHeight;
+                }
+                
+                // Если игра уже инициализирована, обновляем позицию игрока
+                if (game && game.player) {
+                    // Убедимся, что игрок не выходит за границы
+                    game.player.x = Math.min(Math.max(game.player.x, 0), canvas.width - game.player.width);
                 }
             }
             
@@ -2746,6 +2596,24 @@
                 e.preventDefault();
                 handleOpenShop(e);
             }, { passive: false });
+            
+            // Добавляем обработчик для кнопки закрытия магазина
+            const closeShopBtn = document.querySelector('.shop-close');
+            if (closeShopBtn) {
+                closeShopBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (game) {
+                        game.closeShop();
+                    }
+                });
+                
+                closeShopBtn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    if (game) {
+                        game.closeShop();
+                    }
+                }, { passive: false });
+            }
             
             // Desktop controls
             window.addEventListener('keydown', (e) => {
