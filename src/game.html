@@ -169,7 +169,7 @@
         #coinCounter {
             position: absolute;
             top: 10px;
-            left: 10px;
+            right: 80px;
             background: rgba(0, 0, 0, 0.5);
             color: white;
             padding: 5px 10px;
@@ -215,6 +215,138 @@
                 padding: 12px 30px;
             }
         }
+
+        /* Shop Modal */
+        #shopModal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+
+        .shop-content {
+            background: #2a2a2a;
+            border-radius: 15px;
+            padding: 20px;
+            width: 80%;
+            max-width: 350px;
+            max-height: 80%;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .shop-title {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .shop-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .shop-item {
+            background: #3a3a3a;
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .shop-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .shop-item.selected {
+            border-color: #4CAF50;
+        }
+
+        .shop-item.owned {
+            border-color: #2196F3;
+        }
+
+        .shop-item-image {
+            width: 60px;
+            height: 60px;
+            background: #4a4a4a;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+
+        .shop-item-name {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .shop-item-price {
+            color: #FFD700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .shop-item-price::before {
+            content: "🪙";
+            margin-right: 5px;
+        }
+
+        .shop-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .shop-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .shop-button.buy {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .shop-button.buy:disabled {
+            background: #7e7e7e;
+            cursor: not-allowed;
+        }
+
+        .shop-button.close {
+            background: #f44336;
+            color: white;
+        }
+
+        .shop-message {
+            color: white;
+            font-size: 16px;
+            margin-top: 10px;
+            text-align: center;
+            min-height: 20px;
+        }
     </style>
 </head>
 <body>
@@ -234,6 +366,21 @@
         Use ← → arrows to move<br>
         Jump on platforms to climb higher!<br>
         <span id="mobileInstructions">On mobile, touch left/right side to move</span>
+    </div>
+
+    <!-- Shop Modal -->
+    <div id="shopModal">
+        <div class="shop-content">
+            <h2 class="shop-title">Shop</h2>
+            <div class="shop-items">
+                <!-- Items will be added dynamically -->
+            </div>
+            <div class="shop-message" id="shopMessage"></div>
+            <div class="shop-buttons">
+                <button class="shop-button buy" id="buyButton">Buy</button>
+                <button class="shop-button close" id="closeShopButton">Close</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -387,6 +534,7 @@
                 this.isJumping = false;
                 this.powerUpTimer = 0;
                 this.hasPowerUp = false;
+                this.skin = localStorage.getItem('doodleJumpSkin') || 'default';
             }
 
             update(canvasWidth) {
@@ -409,6 +557,7 @@
             }
 
             draw(ctx) {
+                // Draw player body
                 ctx.fillStyle = this.hasPowerUp ? '#FFD700' : '#4CAF50';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
 
@@ -421,6 +570,62 @@
                 
                 ctx.beginPath();
                 ctx.arc(this.x + 20, this.y + 25, 5, 0, Math.PI);
+                ctx.stroke();
+                
+                // Draw skin based on selected skin
+                switch(this.skin) {
+                    case 'hat':
+                        this.drawHat(ctx);
+                        break;
+                    case 'glasses':
+                        this.drawGlasses(ctx);
+                        break;
+                    case 'cap-chain':
+                        this.drawCapAndChain(ctx);
+                        break;
+                }
+            }
+            
+            drawHat(ctx) {
+                // Draw a simple hat
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(this.x + 5, this.y - 10, 30, 10);
+                ctx.fillRect(this.x + 10, this.y - 20, 20, 10);
+            }
+            
+            drawGlasses(ctx) {
+                // Draw glasses
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x + 15, this.y + 15, 5, 0, Math.PI * 2);
+                ctx.arc(this.x + 25, this.y + 15, 5, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Bridge of glasses
+                ctx.beginPath();
+                ctx.moveTo(this.x + 20, this.y + 15);
+                ctx.lineTo(this.x + 20, this.y + 15);
+                ctx.stroke();
+            }
+            
+            drawCapAndChain(ctx) {
+                // Draw cap
+                ctx.fillStyle = '#1E88E5';
+                ctx.beginPath();
+                ctx.arc(this.x + 20, this.y + 5, 15, Math.PI, 0, false);
+                ctx.fill();
+                
+                // Draw cap visor
+                ctx.fillStyle = '#0D47A1';
+                ctx.fillRect(this.x + 5, this.y + 5, 30, 5);
+                
+                // Draw chain
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x + 5, this.y + 30);
+                ctx.lineTo(this.x + 35, this.y + 30);
                 ctx.stroke();
             }
 
@@ -435,6 +640,11 @@
                 if (type === 'spring') {
                     this.jump(-18);
                 }
+            }
+            
+            setSkin(skin) {
+                this.skin = skin;
+                localStorage.setItem('doodleJumpSkin', skin);
             }
         }
 
@@ -528,7 +738,13 @@
                 this.difficulty = 1;
                 this.cameraY = 0;
                 this.instructionsHidden = false;
-                this.shopUnlocked = this.coins >= 50;
+                this.shopUnlocked = true; // Always unlocked for testing
+                this.ownedSkins = JSON.parse(localStorage.getItem('doodleJumpOwnedSkins')) || ['default'];
+                this.shopItems = [
+                    { id: 'hat', name: 'Hat', price: 10, emoji: '🎩' },
+                    { id: 'glasses', name: 'Glasses', price: 20, emoji: '👓' },
+                    { id: 'cap-chain', name: 'Cap & Chain', price: 30, emoji: '🧢' }
+                ];
                 this.updateShopButton();
             }
 
@@ -545,6 +761,7 @@
                 this.instructionsHidden = false;
                 this.updateCoinCounter();
                 this.updateShopButton();
+                this.initShop();
 
                 // Create initial platforms
                 // First platform is directly under the player to prevent falling through
@@ -713,6 +930,136 @@
                     shopBtn.classList.add('locked');
                 }
             }
+            
+            initShop() {
+                const shopItemsContainer = document.querySelector('.shop-items');
+                shopItemsContainer.innerHTML = '';
+                
+                // Create shop items
+                this.shopItems.forEach(item => {
+                    const isOwned = this.ownedSkins.includes(item.id);
+                    const isSelected = this.player.skin === item.id;
+                    
+                    const itemElement = document.createElement('div');
+                    itemElement.className = `shop-item${isOwned ? ' owned' : ''}${isSelected ? ' selected' : ''}`;
+                    itemElement.dataset.id = item.id;
+                    
+                    const imageElement = document.createElement('div');
+                    imageElement.className = 'shop-item-image';
+                    imageElement.textContent = item.emoji;
+                    
+                    const nameElement = document.createElement('div');
+                    nameElement.className = 'shop-item-name';
+                    nameElement.textContent = item.name;
+                    
+                    const priceElement = document.createElement('div');
+                    priceElement.className = 'shop-item-price';
+                    priceElement.textContent = isOwned ? 'Owned' : item.price;
+                    
+                    itemElement.appendChild(imageElement);
+                    itemElement.appendChild(nameElement);
+                    itemElement.appendChild(priceElement);
+                    
+                    itemElement.addEventListener('click', () => {
+                        // Deselect all items
+                        document.querySelectorAll('.shop-item').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        // Select this item
+                        itemElement.classList.add('selected');
+                        
+                        // Update buy button state
+                        this.updateBuyButtonState(item.id);
+                    });
+                    
+                    shopItemsContainer.appendChild(itemElement);
+                });
+                
+                // Set up buy button
+                const buyButton = document.getElementById('buyButton');
+                buyButton.addEventListener('click', () => {
+                    const selectedItem = document.querySelector('.shop-item.selected');
+                    if (!selectedItem) return;
+                    
+                    const itemId = selectedItem.dataset.id;
+                    const item = this.shopItems.find(i => i.id === itemId);
+                    
+                    if (this.ownedSkins.includes(itemId)) {
+                        // Already owned, just equip it
+                        this.player.setSkin(itemId);
+                        this.showShopMessage('Skin equipped!');
+                    } else if (this.coins >= item.price) {
+                        // Buy the skin
+                        this.coins -= item.price;
+                        this.ownedSkins.push(itemId);
+                        localStorage.setItem('doodleJumpCoins', this.coins);
+                        localStorage.setItem('doodleJumpOwnedSkins', JSON.stringify(this.ownedSkins));
+                        this.updateCoinCounter();
+                        
+                        // Mark as owned in UI
+                        selectedItem.classList.add('owned');
+                        selectedItem.querySelector('.shop-item-price').textContent = 'Owned';
+                        
+                        // Equip the skin
+                        this.player.setSkin(itemId);
+                        this.showShopMessage('Skin purchased and equipped!');
+                    } else {
+                        // Not enough coins
+                        this.showShopMessage('Not enough coins!');
+                    }
+                    
+                    // Update buy button state
+                    this.updateBuyButtonState(itemId);
+                });
+                
+                // Set up close button
+                const closeButton = document.getElementById('closeShopButton');
+                closeButton.addEventListener('click', () => {
+                    document.getElementById('shopModal').style.display = 'none';
+                });
+            }
+            
+            updateBuyButtonState(itemId) {
+                const buyButton = document.getElementById('buyButton');
+                const item = this.shopItems.find(i => i.id === itemId);
+                
+                if (this.ownedSkins.includes(itemId)) {
+                    buyButton.textContent = 'Equip';
+                    buyButton.disabled = false;
+                } else if (this.coins >= item.price) {
+                    buyButton.textContent = `Buy (${item.price} coins)`;
+                    buyButton.disabled = false;
+                } else {
+                    buyButton.textContent = `Buy (${item.price} coins)`;
+                    buyButton.disabled = true;
+                }
+            }
+            
+            showShopMessage(message) {
+                const messageElement = document.getElementById('shopMessage');
+                messageElement.textContent = message;
+                
+                // Clear message after 3 seconds
+                setTimeout(() => {
+                    messageElement.textContent = '';
+                }, 3000);
+            }
+            
+            openShop() {
+                document.getElementById('shopModal').style.display = 'flex';
+                
+                // Select the current skin
+                document.querySelectorAll('.shop-item').forEach(item => {
+                    item.classList.remove('selected');
+                    if (item.dataset.id === this.player.skin) {
+                        item.classList.add('selected');
+                    }
+                });
+                
+                // Update buy button state
+                this.updateBuyButtonState(this.player.skin);
+            }
         }
 
         // Initialize game
@@ -779,7 +1126,7 @@
             shopBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (!game || !game.shopUnlocked) return;
-                alert('Shop coming soon! You have ' + game.coins + ' coins.');
+                game.openShop();
             });
 
             // Start button handlers
