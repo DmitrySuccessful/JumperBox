@@ -144,28 +144,6 @@
             z-index: 300;
         }
 
-        /* Shop Button */
-        #shopBtn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            font-size: 20px;
-            background: #9C27B0;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            z-index: 300;
-        }
-
-        #shopBtn:hover {
-            background: #7B1FA2;
-            transform: translateY(-2px);
-        }
-
-        #shopBtn:active {
-            transform: translateY(0);
-        }
-
         /* Coin counter */
         #coinCounter {
             position: absolute;
@@ -517,7 +495,6 @@
         <div id="startScreen">
             <h1 id="gameTitle">JumperBox</h1>
             <button id="startBtn" class="game-button">Начать игру</button>
-            <button id="shopBtn" class="game-button">Магазин</button>
         </div>
         <div id="gameUI" style="display: none;">
             <div id="controlButtons">
@@ -1489,7 +1466,7 @@
                         id: 'hat',
                         name: 'Шляпа',
                         description: 'Защищает от одного падения. Активируется автоматически при падении.',
-                        price: 100,
+                        price: 1000,
                         owned: false,
                         image: 'assets/player_hat.png',
                         emoji: '🎩'
@@ -1498,7 +1475,7 @@
                         id: 'glasses',
                         name: 'Очки',
                         description: 'Позволяет прыгнуть выше. Активируется двойным нажатием на экран.',
-                        price: 150,
+                        price: 1500,
                         owned: false,
                         image: 'assets/player_glasses.png',
                         emoji: '👓'
@@ -1507,7 +1484,7 @@
                         id: 'clothes',
                         name: 'Одежда',
                         description: 'Стильная одежда для вашего персонажа. Чисто косметический эффект.',
-                        price: 200,
+                        price: 2000,
                         owned: false,
                         image: 'assets/player_clothes.png',
                         emoji: '👕'
@@ -2680,7 +2657,6 @@
             const startScreen = document.getElementById('startScreen');
             const startBtn = document.getElementById('startBtn');
             const restartBtn = document.getElementById('restartBtn');
-            const shopBtn = document.getElementById('shopBtn');
             const leftTouch = document.getElementById('leftTouch');
             const rightTouch = document.getElementById('rightTouch');
             
@@ -2766,12 +2742,6 @@
             restartBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
                 handleRestartGame(e);
-            }, { passive: false });
-            
-            shopBtn.addEventListener('click', handleOpenShop);
-            shopBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                handleOpenShop(e);
             }, { passive: false });
             
             // Добавляем обработчик для кнопки магазина в игровом интерфейсе
