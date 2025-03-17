@@ -336,6 +336,14 @@
             margin-right: 5px;
         }
 
+        .shop-item-description {
+            color: #BBBBBB;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
         .shop-buttons {
             display: flex;
             justify-content: space-between;
@@ -409,51 +417,6 @@
     </div>
 
     <script>
-        // Глобальные переменные для изображений скинов
-        const skinImages = {
-            hat: new Image(),
-            cap: new Image(),
-            glasses: new Image()
-        };
-
-        // Загрузка изображений
-        function loadSkinImages() {
-            skinImages.hat.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSz6-Gl7pT1EO-OLp0VgcqmNSuaUtIvbabpaw&s';
-            skinImages.cap.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0a41haAAbVOkpGVOJrncZ3LUZabp-9065Ag&s';
-            skinImages.glasses.src = 'https://cdn-icons-png.flaticon.com/512/27/27106.png';
-            
-            // Проверка загрузки изображений
-            return new Promise((resolve) => {
-                let loadedCount = 0;
-                const totalImages = Object.keys(skinImages).length;
-                
-                const checkAllLoaded = () => {
-                    loadedCount++;
-                    if (loadedCount === totalImages) {
-                        resolve();
-                    }
-                };
-                
-                skinImages.hat.onload = checkAllLoaded;
-                skinImages.cap.onload = checkAllLoaded;
-                skinImages.glasses.onload = checkAllLoaded;
-                
-                // Обработка ошибок загрузки
-                skinImages.hat.onerror = () => {
-                    console.error('Failed to load hat image');
-                    checkAllLoaded();
-                };
-                skinImages.cap.onerror = () => {
-                    console.error('Failed to load cap image');
-                    checkAllLoaded();
-                };
-                skinImages.glasses.onerror = () => {
-                    console.error('Failed to load glasses image');
-                    checkAllLoaded();
-                };
-            });
-        }
-
         // Particle System
         class Particle {
             constructor(x, y, color) {
@@ -605,6 +568,9 @@
                 this.powerUpTimer = 0;
                 this.hasPowerUp = false;
                 this.skin = localStorage.getItem('doodleJumpSkin') || 'default';
+                this.blinkTimer = 0;
+                this.eyesClosed = false;
+                this.animationFrame = 0;
             }
 
             update(canvasWidth) {
@@ -624,107 +590,202 @@
                         this.hasPowerUp = false;
                     }
                 }
+                
+                // Анимация моргания
+                this.blinkTimer++;
+                if (this.blinkTimer > 120) { // Моргает каждые ~2 секунды
+                    this.eyesClosed = true;
+                    if (this.blinkTimer > 130) { // Глаза закрыты на ~0.16 секунды
+                        this.eyesClosed = false;
+                        this.blinkTimer = 0;
+                    }
+                }
+                
+                // Анимация движения
+                this.animationFrame = (this.animationFrame + 1) % 60;
             }
 
             draw(ctx) {
-                // Draw player body
-                ctx.fillStyle = this.hasPowerUp ? '#FFD700' : '#4CAF50';
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-
-                // Draw face
-                ctx.fillStyle = '#000';
-                ctx.beginPath();
-                ctx.arc(this.x + 15, this.y + 15, 3, 0, Math.PI * 2);
-                ctx.arc(this.x + 25, this.y + 15, 3, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.arc(this.x + 20, this.y + 25, 5, 0, Math.PI);
-                ctx.stroke();
-                
-                // Draw skin based on selected skin
+                // Выбираем скин для отрисовки
                 switch(this.skin) {
                     case 'hat':
-                        this.drawHat(ctx);
+                        this.drawPlayerWithHat(ctx);
                         break;
                     case 'glasses':
-                        this.drawGlasses(ctx);
+                        this.drawPlayerWithGlasses(ctx);
                         break;
-                    case 'cap':
-                        this.drawCap(ctx);
+                    case 'clothes':
+                        this.drawPlayerWithClothes(ctx);
+                        break;
+                    default:
+                        this.drawDefaultPlayer(ctx);
                         break;
                 }
             }
             
-            drawHat(ctx) {
-                // Проверяем, загружено ли изображение
-                if (skinImages.hat.complete) {
-                    // Размеры и позиция шляпы
-                    const hatWidth = this.width * 1.2;
-                    const hatHeight = hatWidth * (skinImages.hat.height / skinImages.hat.width);
-                    const hatX = this.x - (hatWidth - this.width) / 2;
-                    const hatY = this.y - hatHeight + 5;
+            // Базовый персонаж
+            drawDefaultPlayer(ctx) {
+                // Тело персонажа
+                ctx.fillStyle = this.hasPowerUp ? '#FFD700' : '#4CAF50';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Тень
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(this.x + this.width - 10, this.y, 10, this.height);
+                
+                // Глаза
+                if (!this.eyesClosed) {
+                    // Открытые глаза
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(this.x + 12, this.y + 15, 5, 0, Math.PI * 2);
+                    ctx.arc(this.x + 28, this.y + 15, 5, 0, Math.PI * 2);
+                    ctx.fill();
                     
-                    // Рисуем шляпу
-                    ctx.drawImage(skinImages.hat, hatX, hatY, hatWidth, hatHeight);
+                    // Зрачки
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(this.x + 12 + Math.sin(this.animationFrame * 0.1) * 2, 
+                             this.y + 15 + Math.cos(this.animationFrame * 0.1), 2, 0, Math.PI * 2);
+                    ctx.arc(this.x + 28 + Math.sin(this.animationFrame * 0.1) * 2, 
+                             this.y + 15 + Math.cos(this.animationFrame * 0.1), 2, 0, Math.PI * 2);
+                    ctx.fill();
                 } else {
-                    // Запасной вариант, если изображение не загружено
-                    ctx.fillStyle = '#8B4513';
-                    ctx.fillRect(this.x + 5, this.y - 10, 30, 10);
-                    ctx.fillRect(this.x + 10, this.y - 20, 20, 10);
-                }
-            }
-            
-            drawGlasses(ctx) {
-                // Проверяем, загружено ли изображение
-                if (skinImages.glasses.complete) {
-                    // Размеры и позиция очков
-                    const glassesWidth = this.width * 0.8;
-                    const glassesHeight = glassesWidth * (skinImages.glasses.height / skinImages.glasses.width);
-                    const glassesX = this.x + (this.width - glassesWidth) / 2;
-                    const glassesY = this.y + 10;
-                    
-                    // Рисуем очки
-                    ctx.drawImage(skinImages.glasses, glassesX, glassesY, glassesWidth, glassesHeight);
-                } else {
-                    // Запасной вариант, если изображение не загружено
+                    // Закрытые глаза (моргание)
                     ctx.strokeStyle = '#000';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
-                    ctx.arc(this.x + 15, this.y + 15, 5, 0, Math.PI * 2);
-                    ctx.arc(this.x + 25, this.y + 15, 5, 0, Math.PI * 2);
-                    ctx.stroke();
-                    
-                    // Bridge of glasses
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + 20, this.y + 15);
-                    ctx.lineTo(this.x + 20, this.y + 15);
+                    ctx.moveTo(this.x + 9, this.y + 15);
+                    ctx.lineTo(this.x + 15, this.y + 15);
+                    ctx.moveTo(this.x + 25, this.y + 15);
+                    ctx.lineTo(this.x + 31, this.y + 15);
                     ctx.stroke();
                 }
+                
+                // Рот
+                ctx.beginPath();
+                const smileOffset = Math.sin(this.animationFrame * 0.1) * 2;
+                ctx.arc(this.x + 20, this.y + 25 + smileOffset, 6, 0, Math.PI);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
             }
             
-            drawCap(ctx) {
-                // Проверяем, загружено ли изображение
-                if (skinImages.cap.complete) {
-                    // Размеры и позиция кепки
-                    const capWidth = this.width * 1.2;
-                    const capHeight = capWidth * (skinImages.cap.height / skinImages.cap.width);
-                    const capX = this.x - (capWidth - this.width) / 2;
-                    const capY = this.y - capHeight / 2;
-                    
-                    // Рисуем кепку
-                    ctx.drawImage(skinImages.cap, capX, capY, capWidth, capHeight);
-                } else {
-                    // Запасной вариант, если изображение не загружено
-                    ctx.fillStyle = '#1E88E5';
+            // Персонаж с шляпой
+            drawPlayerWithHat(ctx) {
+                // Рисуем базового персонажа
+                this.drawDefaultPlayer(ctx);
+                
+                // Рисуем шляпу
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(this.x - 5, this.y - 5, this.width + 10, 10);
+                
+                // Верхняя часть шляпы
+                ctx.fillStyle = '#A0522D';
+                ctx.fillRect(this.x + 5, this.y - 20, this.width - 10, 15);
+                
+                // Лента на шляпе
+                ctx.fillStyle = '#CD853F';
+                ctx.fillRect(this.x + 5, this.y - 8, this.width - 10, 3);
+            }
+            
+            // Персонаж с очками
+            drawPlayerWithGlasses(ctx) {
+                // Рисуем базового персонажа
+                this.drawDefaultPlayer(ctx);
+                
+                // Рисуем очки
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                
+                // Левая линза
+                ctx.beginPath();
+                ctx.arc(this.x + 12, this.y + 15, 7, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Правая линза
+                ctx.beginPath();
+                ctx.arc(this.x + 28, this.y + 15, 7, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Перемычка очков
+                ctx.beginPath();
+                ctx.moveTo(this.x + 19, this.y + 15);
+                ctx.lineTo(this.x + 21, this.y + 15);
+                ctx.stroke();
+                
+                // Дужки очков
+                ctx.beginPath();
+                ctx.moveTo(this.x + 5, this.y + 15);
+                ctx.lineTo(this.x, this.y + 12);
+                ctx.moveTo(this.x + 35, this.y + 15);
+                ctx.lineTo(this.x + 40, this.y + 12);
+                ctx.stroke();
+            }
+            
+            // Персонаж с одеждой
+            drawPlayerWithClothes(ctx) {
+                // Тело персонажа (с другим цветом)
+                ctx.fillStyle = this.hasPowerUp ? '#FFD700' : '#4CAF50';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Тень
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(this.x + this.width - 10, this.y, 10, this.height);
+                
+                // Глаза
+                if (!this.eyesClosed) {
+                    // Открытые глаза
+                    ctx.fillStyle = 'white';
                     ctx.beginPath();
-                    ctx.arc(this.x + 20, this.y + 5, 15, Math.PI, 0, false);
+                    ctx.arc(this.x + 12, this.y + 15, 5, 0, Math.PI * 2);
+                    ctx.arc(this.x + 28, this.y + 15, 5, 0, Math.PI * 2);
                     ctx.fill();
                     
-                    // Draw cap visor
-                    ctx.fillStyle = '#0D47A1';
-                    ctx.fillRect(this.x + 5, this.y + 5, 30, 5);
+                    // Зрачки
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(this.x + 12 + Math.sin(this.animationFrame * 0.1) * 2, 
+                             this.y + 15 + Math.cos(this.animationFrame * 0.1), 2, 0, Math.PI * 2);
+                    ctx.arc(this.x + 28 + Math.sin(this.animationFrame * 0.1) * 2, 
+                             this.y + 15 + Math.cos(this.animationFrame * 0.1), 2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Закрытые глаза (моргание)
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 9, this.y + 15);
+                    ctx.lineTo(this.x + 15, this.y + 15);
+                    ctx.moveTo(this.x + 25, this.y + 15);
+                    ctx.lineTo(this.x + 31, this.y + 15);
+                    ctx.stroke();
                 }
+                
+                // Рот
+                ctx.beginPath();
+                const smileOffset = Math.sin(this.animationFrame * 0.1) * 2;
+                ctx.arc(this.x + 20, this.y + 25 + smileOffset, 6, 0, Math.PI);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Рисуем одежду (футболку)
+                ctx.fillStyle = '#3F51B5';
+                ctx.fillRect(this.x, this.y + this.height/2, this.width, this.height/2);
+                
+                // Воротник
+                ctx.fillStyle = '#C5CAE9';
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width/2, this.y + this.height/2);
+                ctx.lineTo(this.x + this.width/2 - 10, this.y + this.height/2 + 10);
+                ctx.lineTo(this.x + this.width/2 + 10, this.y + this.height/2 + 10);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Полоска на футболке
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(this.x, this.y + this.height - 10, this.width, 5);
             }
 
             jump(force = -12) {
@@ -839,9 +900,10 @@
                 this.shopUnlocked = true; // Always unlocked for testing
                 this.ownedSkins = JSON.parse(localStorage.getItem('doodleJumpOwnedSkins')) || ['default'];
                 this.shopItems = [
-                    { id: 'hat', name: 'Hat', price: 30, emoji: '🎩' },
-                    { id: 'glasses', name: 'Glasses', price: 30, emoji: '👓' },
-                    { id: 'cap', name: 'Cap', price: 40, emoji: '🧢' }
+                    { id: 'default', name: 'Default', price: 0, emoji: '🟩', description: 'Basic character' },
+                    { id: 'hat', name: 'Hat', price: 30, emoji: '🎩', description: 'Stylish brown hat' },
+                    { id: 'glasses', name: 'Glasses', price: 30, emoji: '👓', description: 'Cool glasses' },
+                    { id: 'clothes', name: 'Clothes', price: 40, emoji: '👕', description: 'Blue t-shirt' }
                 ];
             }
 
@@ -1042,9 +1104,14 @@
                     priceElement.className = 'shop-item-price';
                     priceElement.textContent = isOwned ? 'Owned' : item.price;
                     
+                    const descElement = document.createElement('div');
+                    descElement.className = 'shop-item-description';
+                    descElement.textContent = item.description;
+                    
                     itemElement.appendChild(imageElement);
                     itemElement.appendChild(nameElement);
                     itemElement.appendChild(priceElement);
+                    itemElement.appendChild(descElement);
                     
                     // Обработчик клика для десктопа
                     itemElement.addEventListener('click', () => {
@@ -1334,13 +1401,6 @@
 
             // Initial setup
             resizeCanvas();
-            
-            // Загрузка изображений скинов перед началом игры
-            loadSkinImages().then(() => {
-                console.log('Skin images loaded successfully');
-            }).catch(error => {
-                console.error('Error loading skin images:', error);
-            });
         });
     </script>
 </body>
