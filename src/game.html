@@ -214,6 +214,35 @@
                 font-size: 20px;
                 padding: 12px 30px;
             }
+            
+            /* Мобильные стили для магазина */
+            .shop-content {
+                width: 90%;
+                max-height: 90%;
+            }
+            
+            .shop-items {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .shop-item {
+                padding: 8px;
+            }
+            
+            .shop-item-image {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .shop-button {
+                padding: 12px 15px;
+                font-size: 18px;
+            }
+            
+            /* Убедимся, что z-index магазина выше, чем у других элементов */
+            #shopModal {
+                z-index: 1000;
+            }
         }
 
         /* Shop Modal */
@@ -896,7 +925,6 @@
                 this.ctx.font = '20px Arial';
                 this.ctx.fillText(`Score: ${this.score}`, 10, 30);
                 this.ctx.fillText(`High Score: ${this.highScore}`, 10, 60);
-                this.ctx.fillText(`Level: ${this.difficulty}`, canvasWidth - 100, 30);
 
                 // Draw game over screen
                 if (this.gameOver) {
@@ -960,18 +988,16 @@
                     itemElement.appendChild(nameElement);
                     itemElement.appendChild(priceElement);
                     
+                    // Обработчик клика для десктопа
                     itemElement.addEventListener('click', () => {
-                        // Deselect all items
-                        document.querySelectorAll('.shop-item').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        
-                        // Select this item
-                        itemElement.classList.add('selected');
-                        
-                        // Update buy button state
-                        this.updateBuyButtonState(item.id);
+                        this.selectShopItem(itemElement, item.id);
                     });
+                    
+                    // Обработчик для мобильных устройств
+                    itemElement.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        this.selectShopItem(itemElement, item.id);
+                    }, { passive: false });
                     
                     shopItemsContainer.appendChild(itemElement);
                 });
@@ -979,45 +1005,76 @@
                 // Set up buy button
                 const buyButton = document.getElementById('buyButton');
                 buyButton.addEventListener('click', () => {
-                    const selectedItem = document.querySelector('.shop-item.selected');
-                    if (!selectedItem) return;
-                    
-                    const itemId = selectedItem.dataset.id;
-                    const item = this.shopItems.find(i => i.id === itemId);
-                    
-                    if (this.ownedSkins.includes(itemId)) {
-                        // Already owned, just equip it
-                        this.player.setSkin(itemId);
-                        this.showShopMessage('Skin equipped!');
-                    } else if (this.coins >= item.price) {
-                        // Buy the skin
-                        this.coins -= item.price;
-                        this.ownedSkins.push(itemId);
-                        localStorage.setItem('doodleJumpCoins', this.coins);
-                        localStorage.setItem('doodleJumpOwnedSkins', JSON.stringify(this.ownedSkins));
-                        this.updateCoinCounter();
-                        
-                        // Mark as owned in UI
-                        selectedItem.classList.add('owned');
-                        selectedItem.querySelector('.shop-item-price').textContent = 'Owned';
-                        
-                        // Equip the skin
-                        this.player.setSkin(itemId);
-                        this.showShopMessage('Skin purchased and equipped!');
-                    } else {
-                        // Not enough coins
-                        this.showShopMessage('Not enough coins!');
-                    }
-                    
-                    // Update buy button state
-                    this.updateBuyButtonState(itemId);
+                    this.handleBuyButton();
                 });
+                
+                // Обработчик для мобильных устройств
+                buyButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handleBuyButton();
+                }, { passive: false });
                 
                 // Set up close button
                 const closeButton = document.getElementById('closeShopButton');
                 closeButton.addEventListener('click', () => {
                     document.getElementById('shopModal').style.display = 'none';
                 });
+                
+                // Обработчик для мобильных устройств
+                closeButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    document.getElementById('shopModal').style.display = 'none';
+                }, { passive: false });
+            }
+            
+            // Выделение элемента в магазине
+            selectShopItem(itemElement, itemId) {
+                // Deselect all items
+                document.querySelectorAll('.shop-item').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                
+                // Select this item
+                itemElement.classList.add('selected');
+                
+                // Update buy button state
+                this.updateBuyButtonState(itemId);
+            }
+            
+            // Обработка нажатия кнопки покупки
+            handleBuyButton() {
+                const selectedItem = document.querySelector('.shop-item.selected');
+                if (!selectedItem) return;
+                
+                const itemId = selectedItem.dataset.id;
+                const item = this.shopItems.find(i => i.id === itemId);
+                
+                if (this.ownedSkins.includes(itemId)) {
+                    // Already owned, just equip it
+                    this.player.setSkin(itemId);
+                    this.showShopMessage('Skin equipped!');
+                } else if (this.coins >= item.price) {
+                    // Buy the skin
+                    this.coins -= item.price;
+                    this.ownedSkins.push(itemId);
+                    localStorage.setItem('doodleJumpCoins', this.coins);
+                    localStorage.setItem('doodleJumpOwnedSkins', JSON.stringify(this.ownedSkins));
+                    this.updateCoinCounter();
+                    
+                    // Mark as owned in UI
+                    selectedItem.classList.add('owned');
+                    selectedItem.querySelector('.shop-item-price').textContent = 'Owned';
+                    
+                    // Equip the skin
+                    this.player.setSkin(itemId);
+                    this.showShopMessage('Skin purchased and equipped!');
+                } else {
+                    // Not enough coins
+                    this.showShopMessage('Not enough coins!');
+                }
+                
+                // Update buy button state
+                this.updateBuyButtonState(itemId);
             }
             
             updateBuyButtonState(itemId) {
@@ -1128,6 +1185,13 @@
                 if (!game || !game.shopUnlocked) return;
                 game.openShop();
             });
+            
+            // Добавляем обработчик для мобильных устройств
+            shopBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (!game || !game.shopUnlocked) return;
+                game.openShop();
+            }, { passive: false });
 
             // Start button handlers
             startBtn.addEventListener('click', startGame);
