@@ -547,7 +547,6 @@
                 <!-- Shop items will be dynamically added here -->
             </div>
             <div class="shop-buttons">
-                <button id="buyButton" class="shop-button buy">Купить</button>
                 <div id="shopMessage" class="shop-message"></div>
             </div>
         </div>
@@ -1945,18 +1944,6 @@
                     shopItemsContainer.appendChild(itemElement);
                 });
                 
-                // Set up buy button
-                const buyButton = document.getElementById('buyButton');
-                buyButton.addEventListener('click', () => {
-                    this.handleBuyButton();
-                });
-                
-                // Обработчик для мобильных устройств
-                buyButton.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.handleBuyButton();
-                }, { passive: false });
-                
                 // Добавляем кнопку покупки за звезды
                 const buyStarsButton = document.createElement('button');
                 buyStarsButton.id = 'buyStarsButton';
@@ -2086,20 +2073,15 @@
             }
             
             updateBuyButtonState(itemId) {
-                const buyButton = document.getElementById('buyButton');
                 const buyStarsButton = document.getElementById('buyStarsButton');
+                if (!buyStarsButton) return;
+                
                 const item = this.shopItems.find(i => i.id === itemId);
                 
                 if (this.ownedSkins.includes(itemId)) {
-                    buyButton.textContent = 'Выбрать';
-                    buyButton.disabled = false;
                     buyStarsButton.style.display = 'none';
                 } else if (item.premium) {
-                    // Премиум-скин, показываем обе кнопки
-                    buyButton.textContent = `Купить (${item.price} монет)`;
-                    buyButton.disabled = this.coins < item.price;
-                    
-                    // Показываем кнопку покупки за звезды только если доступно
+                    // Show stars button only if available
                     if (this.telegramStarsAvailable) {
                         buyStarsButton.style.display = 'block';
                         buyStarsButton.textContent = `Купить (${this.telegramStarsPrices[itemId]} ⭐)`;
@@ -2107,9 +2089,6 @@
                         buyStarsButton.style.display = 'none';
                     }
                 } else {
-                    // Обычный скин
-                    buyButton.textContent = `Купить (${item.price} монет)`;
-                    buyButton.disabled = this.coins < item.price;
                     buyStarsButton.style.display = 'none';
                 }
             }
@@ -2307,7 +2286,7 @@
                         selectButton.disabled = this.player.skin === item.id;
                         selectButton.onclick = () => {
                             this.player.setSkin(item.id);
-                            localStorage.setItem('doodleJumpSkin', item.id);
+                            localStorage.setItem('doodleJumpSelectedSkin', item.id);
                             this.showNotification(`Выбран скин: ${item.name}`, '#4CAF50');
                             this.showSkinAbilityNotification();
                             this.showShop(); // Refresh shop to update buttons
@@ -2383,7 +2362,7 @@
                     this.platforms.push(new Platform(x, y, 'normal'));
                 }
                 
-                // Create player
+                // Create player with the selected skin
                 const selectedSkin = localStorage.getItem('doodleJumpSelectedSkin') || 'default';
                 this.player = new Player(this.canvas.width / 2, this.canvas.height - 100, selectedSkin);
                 
@@ -2458,17 +2437,21 @@
             
             // Show start message with game instructions
             showStartMessage() {
-                const instructions = this.isMobile ? 
-                    'Нажимайте на левую/правую часть экрана для движения. Используйте особые способности скинов!' : 
-                    'Используйте стрелки или A/D для движения. Особые способности активируются автоматически или по двойному клику.';
+                const instructions = document.getElementById('gameInstructions');
+                if (instructions) {
+                    instructions.style.display = 'block';
+                    
+                    // Hide instructions after 5 seconds
+                    setTimeout(() => {
+                        instructions.style.display = 'none';
+                    }, 5000);
+                }
                 
-                this.showNotification(instructions, '#2196F3', 5000);
-                
-                // If player has a skin with special abilities, show additional instructions
+                // If player has a skin with special abilities, show ability notification
                 if (this.player.skin && this.player.skin !== 'default') {
                     setTimeout(() => {
                         this.showSkinAbilityNotification();
-                    }, 5500);
+                    }, 2000);
                 }
             }
 
