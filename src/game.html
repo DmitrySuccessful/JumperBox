@@ -1626,8 +1626,14 @@
 
             init() {
                 // Set up canvas
-                this.canvas = document.getElementById('gameCanvas');
-                this.ctx = this.canvas.getContext('2d');
+                const canvas = document.getElementById('gameCanvas');
+                if (canvas) {
+                    this.canvas = canvas;
+                    this.ctx = canvas.getContext('2d');
+                } else {
+                    console.error('Canvas element not found!');
+                    return;
+                }
                 
                 // Resize canvas to fit window
                 this.resizeCanvas();
@@ -1649,23 +1655,16 @@
                 this.setupEventListeners();
                 
                 // Show start screen
-                document.getElementById('startScreen').style.display = 'flex';
-                document.getElementById('gameUI').style.display = 'none';
+                const startScreen = document.getElementById('startScreen');
+                if (startScreen) {
+                    startScreen.style.display = 'flex';
+                }
                 
-                // Set up start button
-                document.getElementById('startButton').addEventListener('click', () => {
-                    this.startGame();
-                });
-                
-                // Set up shop button
-                document.getElementById('shopButton').addEventListener('click', () => {
-                    this.showShop();
-                });
-                
-                // Set up restart button
-                document.getElementById('restartButton').addEventListener('click', () => {
-                    this.startGame();
-                });
+                // Hide game UI
+                const gameUI = document.getElementById('gameUI');
+                if (gameUI) {
+                    gameUI.style.display = 'none';
+                }
             }
 
             generatePlatform(y) {
@@ -2000,7 +1999,10 @@
             }
             
             updateCoinCounter() {
-                document.getElementById('coinCounter').textContent = this.coins;
+                const coinCounter = document.getElementById('coinCounter');
+                if (coinCounter) {
+                    coinCounter.textContent = this.coins;
+                }
             }
             
             initShop() {
@@ -2349,7 +2351,17 @@
             // Show shop modal
             showShop() {
                 const shopModal = document.getElementById('shopModal');
+                if (!shopModal) {
+                    console.error('Shop modal element not found!');
+                    return;
+                }
+                
                 const shopItemsContainer = document.getElementById('shopItems');
+                if (!shopItemsContainer) {
+                    console.error('Shop items container not found!');
+                    return;
+                }
+                
                 shopItemsContainer.innerHTML = '';
                 
                 this.shopItems.forEach(item => {
@@ -2500,10 +2512,16 @@
                 this.gameLoop();
                 
                 // Hide start screen
-                document.getElementById('startScreen').style.display = 'none';
+                const startScreen = document.getElementById('startScreen');
+                if (startScreen) {
+                    startScreen.style.display = 'none';
+                }
                 
                 // Show game UI
-                document.getElementById('gameUI').style.display = 'block';
+                const gameUI = document.getElementById('gameUI');
+                if (gameUI) {
+                    gameUI.style.display = 'block';
+                }
             }
             
             // Show start message with game instructions
@@ -2524,7 +2542,12 @@
 
             // Close shop modal
             closeShop() {
-                document.getElementById('shopModal').style.display = 'none';
+                const shopModal = document.getElementById('shopModal');
+                if (shopModal) {
+                    shopModal.style.display = 'none';
+                } else {
+                    console.error('Shop modal element not found!');
+                }
             }
 
             // Set up event listeners
@@ -2621,6 +2644,15 @@
                     this.player.x = Math.min(Math.max(this.player.x, 0), this.canvas.width);
                 }
             }
+
+            // Game loop method
+            gameLoop() {
+                if (!this.gameOver) {
+                    this.update();
+                    this.draw();
+                    requestAnimationFrame(() => this.gameLoop());
+                }
+            }
         }
 
         // Initialize game
@@ -2676,7 +2708,6 @@
                 if (!gameStarted) {
                     initGame();
                     game.startGame();
-                    gameLoop();
                     gameStarted = true;
                 }
             }
