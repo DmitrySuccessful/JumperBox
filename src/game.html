@@ -846,6 +846,7 @@
                 
                 // Рисуем индикатор высокого прыжка, если доступен
                 if (this.extraJumpAvailable && this.skin === 'glasses') {
+                    // Keep only the triangle indicator above the player
                     ctx.beginPath();
                     const arrowY = this.y - 15;
                     ctx.moveTo(this.x + this.width / 2, arrowY - 10);
@@ -855,20 +856,8 @@
                     ctx.fillStyle = `rgba(0, 0, 0, ${0.5 + Math.sin(this.animationFrame * 0.2) * 0.5})`;
                     ctx.fill();
                     
-                    // Add a glasses icon above the player
-                    ctx.font = '16px Arial';
-                    ctx.fillText('👓', this.x + this.width / 2 - 8, this.y - 25);
-                    
-                    // Add a pulsing circle effect
-                    ctx.beginPath();
-                    const pulseSize = 1 + Math.sin(this.animationFrame * 0.1) * 0.2;
-                    ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width * 0.7 * pulseSize, 
-                             0, Math.PI * 2);
-                    ctx.strokeStyle = `rgba(0, 0, 0, ${0.3 + Math.sin(this.animationFrame * 0.1) * 0.2})`;
-                    ctx.setLineDash([5, 5]);
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.setLineDash([]);
+                    // Remove glasses icon
+                    // Remove pulsing circle effect
                 }
                 
                 // Рисуем индикатор двойных монет, если активен
@@ -1475,7 +1464,7 @@
                         id: 'glasses',
                         name: 'Очки',
                         description: 'Позволяет прыгнуть выше. Активируется двойным нажатием на экран.',
-                        price: 1500,
+                        price: 1000,
                         owned: false,
                         image: 'assets/player_glasses.png',
                         emoji: '👓'
@@ -1484,7 +1473,7 @@
                         id: 'clothes',
                         name: 'Одежда',
                         description: 'Стильная одежда для вашего персонажа. Чисто косметический эффект.',
-                        price: 2000,
+                        price: 200,
                         owned: false,
                         image: 'assets/player_clothes.png',
                         emoji: '👕'
@@ -1493,7 +1482,7 @@
                         id: 'gold',
                         name: 'Золотой куб',
                         description: 'Увеличивает шанс получения двойных монет на 30%. Эффект постоянный.',
-                        price: 500,
+                        price: 750,
                         owned: false,
                         image: 'assets/player_gold.png',
                         emoji: '🟨',
@@ -1504,7 +1493,7 @@
                         id: 'fire',
                         name: 'Огненный куб',
                         description: 'Оставляет огненный след при прыжке. Активен постоянно во время игры.',
-                        price: 800,
+                        price: 500,
                         owned: false,
                         image: 'assets/player_fire.png',
                         emoji: '🔥',
@@ -1804,13 +1793,7 @@
                             );
                         }
                     } else {
-                        this.gameOver = true;
-                        if (this.score > this.highScore) {
-                            this.highScore = this.score;
-                            localStorage.setItem('doodleJumpHighScore', this.highScore);
-                        }
-                        this.showRestartButton();
-                        this.showShopButton();
+                        this.gameOver();
                     }
                 }
                 
@@ -1830,11 +1813,12 @@
                 }
                 
                 // Проверка на получение двойных монет (для золотого скина)
-                if (this.player.doubleCoinsChance > 0 && this.player.skin === 'gold' && 
+                // Remove the periodic notification that was showing too frequently
+                /*if (this.player.doubleCoinsChance > 0 && this.player.skin === 'gold' && 
                     Math.random() < 0.01) {
                     // Периодически показываем напоминание о бонусе
                     this.showNotification('💎 Шанс двойных монет активен!');
-                }
+                }*/
                 
                 // Создание двойных монет на платформах для золотого скина
                 if (this.player && this.player.skin === 'gold') {
@@ -2647,6 +2631,43 @@
                     requestAnimationFrame(() => this.gameLoop());
                 }
             }
+
+            gameOver() {
+                this.gameOver = true;
+                
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('doodleJumpHighScore', this.highScore);
+                }
+                
+                // Show restart and shop buttons
+                this.showRestartButton();
+                this.showShopButton();
+                
+                // Hide touch zones when game is over
+                const leftTouch = document.getElementById('leftTouch');
+                const rightTouch = document.getElementById('rightTouch');
+                if (leftTouch) leftTouch.style.display = 'none';
+                if (rightTouch) rightTouch.style.display = 'none';
+            }
+            
+            // Reset the game state
+            resetGame() {
+                this.gameOver = false;
+                this.score = 0;
+                this.platforms = [];
+                this.player = null;
+                this.difficulty = 1;
+                this.cameraY = 0;
+                
+                // Show touch zones when game is reset
+                const leftTouch = document.getElementById('leftTouch');
+                const rightTouch = document.getElementById('rightTouch');
+                if (leftTouch && this.isMobile) leftTouch.style.display = 'block';
+                if (rightTouch && this.isMobile) rightTouch.style.display = 'block';
+                
+                this.init();
+            }
         }
 
         // Initialize game
@@ -2718,9 +2739,15 @@
             // Restart game
             function handleRestartGame(e) {
                 if (e) e.preventDefault();
-                initGame();
-                game.startGame();
-                gameStarted = true;
+                if (game) {
+                    game.resetGame();
+                    game.startGame();
+                    gameStarted = true;
+                } else {
+                    initGame();
+                    game.startGame();
+                    gameStarted = true;
+                }
             }
             
             // Open shop
