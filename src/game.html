@@ -149,7 +149,7 @@
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            margin-right: 10px;
+            margin-right: 15px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
@@ -177,13 +177,36 @@
         #controlButtons {
             display: none; /* Скрыт по умолчанию */
             justify-content: center;
-            gap: 20px;
+            gap: 30px; /* Увеличиваем расстояние между кнопками */
             position: absolute;
-            top: 60%;
+            top: 65%;
             left: 50%;
-            transform: translate(-50%, 0);
+            transform: translate(-50%, -50%);
             z-index: 1001;
             width: 100%;
+        }
+        
+        /* Стили для горизонтального расположения кнопок */
+        #restartBtn {
+            margin-right: 15px; /* Отступ справа для кнопки рестарта */
+        }
+        
+        #shopBtnInGame {
+            margin-left: 15px; /* Отступ слева для кнопки магазина */
+        }
+        
+        /* Адаптив для мобильных устройств */
+        @media (max-width: 480px) {
+            #controlButtons {
+                flex-direction: column; /* Вертикальное расположение на узких экранах */
+                gap: 15px;
+            }
+            
+            #restartBtn, #shopBtnInGame {
+                margin: 0; /* Убираем горизонтальные отступы */
+                width: 80%; /* Ограничиваем ширину кнопок */
+                max-width: 250px;
+            }
         }
         
         /* В состоянии game-over показываем кнопки */

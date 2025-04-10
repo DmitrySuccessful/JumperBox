@@ -1346,20 +1346,10 @@
                     this.ctx.fillText(`Итоговый счёт: ${this.score}`, canvasWidth/2 - 80, canvasHeight/2);
                     this.ctx.fillText(`Монеты: ${this.coins}`, canvasWidth/2 - 50, canvasHeight/2 + 30);
                     
-                    // Принудительно показываем кнопки при каждой отрисовке
-                    const restartBtn = document.getElementById('restartBtn');
-                    const shopBtnInGame = document.getElementById('shopBtnInGame');
-                    
-                    if (restartBtn) {
-                        restartBtn.style.display = 'block';
-                        restartBtn.style.position = 'absolute';
-                        restartBtn.style.zIndex = '1001';
-                    }
-                    
-                    if (shopBtnInGame) {
-                        shopBtnInGame.style.display = 'block';
-                        shopBtnInGame.style.position = 'absolute';
-                        shopBtnInGame.style.zIndex = '1001';
+                    // Принудительно показываем контейнер с кнопками
+                    const controlButtons = document.getElementById('controlButtons');
+                    if (controlButtons) {
+                        controlButtons.style.display = 'flex';
                     }
                 }
             }
@@ -2146,7 +2136,7 @@
                     gameContainer.classList.add('game-over');
                 }
                 
-                // Принудительно создать и отобразить кнопки
+                // Устанавливаем правильное отображение UI-элементов
                 const restartBtn = document.getElementById('restartBtn');
                 const shopBtnInGame = document.getElementById('shopBtnInGame');
                 const gameUI = document.getElementById('gameUI');
@@ -2157,44 +2147,61 @@
                     gameUI.style.zIndex = '1000';
                 }
                 
+                // Отображаем контейнер с кнопками
                 if (controlButtons) {
                     controlButtons.style.display = 'flex';
                     controlButtons.style.zIndex = '1001';
+                    
+                    // Определяем ориентацию кнопок в зависимости от ширины экрана
+                    if (window.innerWidth <= 480) {
+                        controlButtons.style.flexDirection = 'column';
+                    } else {
+                        controlButtons.style.flexDirection = 'row';
+                    }
                 }
                 
+                // Настраиваем отображение и стили кнопок
                 if (restartBtn) {
                     restartBtn.style.display = 'block';
-                    restartBtn.style.position = 'absolute';
-                    restartBtn.style.top = '60%';
-                    restartBtn.style.left = '50%';
-                    restartBtn.style.transform = 'translate(-50%, -50%)';
-                    restartBtn.style.zIndex = '1001';
-                    console.log("Кнопка рестарта должна быть видна:", restartBtn);
+                    restartBtn.style.opacity = '1';
+                    
+                    // На мобильных экранах кнопки располагаются вертикально
+                    if (window.innerWidth <= 480) {
+                        restartBtn.style.margin = '0 auto 15px auto';
+                    } else {
+                        restartBtn.style.marginRight = '15px';
+                    }
                 }
                 
                 if (shopBtnInGame) {
                     shopBtnInGame.style.display = 'block';
-                    shopBtnInGame.style.position = 'absolute';
-                    shopBtnInGame.style.top = '70%';
-                    shopBtnInGame.style.left = '50%';
-                    shopBtnInGame.style.transform = 'translate(-50%, -50%)';
-                    shopBtnInGame.style.zIndex = '1001';
-                    console.log("Кнопка магазина должна быть видна:", shopBtnInGame);
+                    shopBtnInGame.style.opacity = '1';
+                    
+                    if (window.innerWidth <= 480) {
+                        shopBtnInGame.style.margin = '15px auto 0 auto';
+                    } else {
+                        shopBtnInGame.style.marginLeft = '15px';
+                    }
                 }
                 
-                // Принудительно отображаем кнопки напрямую через document.body
+                // Создание резервных кнопок, если основные не были найдены
                 if (!restartBtn || !shopBtnInGame) {
                     // Если кнопки не найдены, создаем их заново
                     const newControlButtons = document.createElement('div');
                     newControlButtons.id = 'fallbackControlButtons';
                     newControlButtons.style.position = 'absolute';
-                    newControlButtons.style.top = '60%';
+                    newControlButtons.style.top = '65%';
                     newControlButtons.style.left = '50%';
-                    newControlButtons.style.transform = 'translate(-50%, 0)';
+                    newControlButtons.style.transform = 'translate(-50%, -50%)';
                     newControlButtons.style.display = 'flex';
                     newControlButtons.style.justifyContent = 'center';
-                    newControlButtons.style.gap = '20px';
+                    newControlButtons.style.gap = '30px';
                     newControlButtons.style.zIndex = '9999';
+                    
+                    // Ориентация кнопок в зависимости от ширины экрана
+                    if (window.innerWidth <= 480) {
+                        newControlButtons.style.flexDirection = 'column';
+                    }
                     
                     if (!restartBtn) {
                         const newRestartBtn = document.createElement('button');
@@ -2206,6 +2213,7 @@
                         newRestartBtn.style.borderRadius = '25px';
                         newRestartBtn.style.cursor = 'pointer';
                         newRestartBtn.style.zIndex = '9999';
+                        newRestartBtn.style.margin = window.innerWidth <= 480 ? '0 auto 15px auto' : '0 15px 0 0';
                         newRestartBtn.onclick = () => this.resetGame();
                         newControlButtons.appendChild(newRestartBtn);
                     }
@@ -2220,21 +2228,13 @@
                         newShopBtn.style.borderRadius = '25px';
                         newShopBtn.style.cursor = 'pointer';
                         newShopBtn.style.zIndex = '9999';
+                        newShopBtn.style.margin = window.innerWidth <= 480 ? '15px auto 0 auto' : '0 0 0 15px';
                         newShopBtn.onclick = () => this.showShop();
                         newControlButtons.appendChild(newShopBtn);
                     }
                     
                     gameContainer.appendChild(newControlButtons);
                 }
-                
-                // Проверка стилей кнопок через timeout
-                setTimeout(() => {
-                    const restartBtn = document.getElementById('restartBtn');
-                    const shopBtnInGame = document.getElementById('shopBtnInGame');
-                    console.log("Проверка кнопок через timeout:");
-                    console.log("Кнопка рестарта:", restartBtn, "стиль display:", restartBtn.style.display);
-                    console.log("Кнопка магазина:", shopBtnInGame, "стиль display:", shopBtnInGame.style.display);
-                }, 100);
                 
                 // Hide touch zones when game is over
                 const leftTouch = document.getElementById('leftTouch');
