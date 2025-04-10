@@ -2013,28 +2013,34 @@
 
             // Set up event listeners
             setupEventListeners() {
+                // Удаляем старые обработчики перед добавлением новых
+                this.removeEventListeners();
+                
                 // Keyboard controls
-                document.addEventListener('keydown', (e) => {
+                this.keyDownHandler = (e) => {
                     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
                         this.leftPressed = true;
                     }
                     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
                         this.rightPressed = true;
                     }
-                });
+                };
                 
-                document.addEventListener('keyup', (e) => {
+                this.keyUpHandler = (e) => {
                     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
                         this.leftPressed = false;
                     }
                     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
                         this.rightPressed = false;
                     }
-                });
+                };
+                
+                document.addEventListener('keydown', this.keyDownHandler);
+                document.addEventListener('keyup', this.keyUpHandler);
                 
                 // Touch controls for mobile
                 if (this.isMobile) {
-                    window.addEventListener('deviceorientation', (e) => {
+                    this.deviceOrientationHandler = (e) => {
                         if (this.gameStarted && !this.gameOver) {
                             const tilt = e.gamma; // Left-right tilt in degrees
                             
@@ -2049,10 +2055,12 @@
                                 this.rightPressed = false;
                             }
                         }
-                    });
+                    };
+                    
+                    window.addEventListener('deviceorientation', this.deviceOrientationHandler);
                 } else {
                     // Mouse controls for desktop
-                    this.canvas.addEventListener('mousemove', (e) => {
+                    this.mouseMoveHandler = (e) => {
                         if (this.gameStarted && !this.gameOver) {
                             const rect = this.canvas.getBoundingClientRect();
                             const mouseX = e.clientX - rect.left;
@@ -2068,12 +2076,14 @@
                                 this.rightPressed = false;
                             }
                         }
-                    });
+                    };
+                    
+                    this.canvas.addEventListener('mousemove', this.mouseMoveHandler);
                 }
                 
                 // Double tap for super jump with glasses
                 let lastTap = 0;
-                this.canvas.addEventListener('click', (e) => {
+                this.clickHandler = (e) => {
                     const currentTime = new Date().getTime();
                     const tapLength = currentTime - lastTap;
                     
@@ -2086,10 +2096,12 @@
                     }
                     
                     lastTap = currentTime;
-                });
+                };
+                
+                this.canvas.addEventListener('click', this.clickHandler);
                 
                 // Double-click for desktop to activate glasses superpower
-                this.canvas.addEventListener('dblclick', () => {
+                this.dblClickHandler = () => {
                     if (this.player && this.player.skin === 'glasses' && this.player.extraJumpAvailable) {
                         if (this.player.activateDoubleJump()) {
                             this.showNotification('👓 Супер-прыжок активирован!');
@@ -2103,28 +2115,319 @@
                             }
                         }
                     }
-                });
+                };
+                
+                this.canvas.addEventListener('dblclick', this.dblClickHandler);
             }
+            
+            // Метод для удаления всех обработчиков событий
+            removeEventListeners() {
+                if (this.keyDownHandler) {
+                    document.removeEventListener('keydown', this.keyDownHandler);
+                }
+                if (this.keyUpHandler) {
+                    document.removeEventListener('keyup', this.keyUpHandler);
+                }
+                if (this.deviceOrientationHandler) {
+                    window.removeEventListener('deviceorientation', this.deviceOrientationHandler);
+                }
+                if (this.mouseMoveHandler && this.canvas) {
+                    this.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
+                }
+                if (this.clickHandler && this.canvas) {
+                    this.canvas.removeEventListener('click', this.clickHandler);
+                }
+                if (this.dblClickHandler && this.canvas) {
+                    this.canvas.removeEventListener('dblclick', this.dblClickHandler);
+                }
+            }
+            
+            // Update method that controls player movement
+            update() {
+                if (this.gameOver) return;
 
-            // Resize canvas to fit window
-            resizeCanvas() {
-                const gameContainer = document.getElementById('gameContainer');
-                if (!gameContainer) {
-                    console.error('Game container not found!');
-                    return;
+                const canvasWidth = this.canvas.width;
+                const canvasHeight = this.canvas.height;
+                
+                // Обработка перемещения игрока на основе нажатых клавиш
+                if (this.leftPressed) {
+                    this.player.velocityX = -5;
+                } else if (this.rightPressed) {
+                    this.player.velocityX = 5;
+                } else {
+                    this.player.velocityX = 0;
+                }
+
+                this.player.update(canvasWidth);
+                this.particles.update();
+
+                // Update difficulty
+                this.difficulty = 1 + Math.floor(this.score / 1000);
+
+                // Camera follow
+                if (this.player.y < canvasHeight / 2) {
+                    const diff = canvasHeight / 2 - this.player.y;
+                    this.cameraY += diff;
+                    this.player.y += diff;
+                    
+                    this.platforms.forEach(platform => {
+                        platform.y += diff;
+                        if (platform.powerUp) {
+                            platform.powerUp.y += diff;
+                        }
+                        if (platform.coin) {
+                            platform.coin.y += diff;
+                        }
+                        if (platform.secondCoin) {
+                            platform.secondCoin.y += diff;
+                        }
+                    });
+
+                    // Remove platforms that are off screen
+                    this.platforms = this.platforms.filter(platform => platform.y < canvasHeight);
+
+                    // Generate new platforms
+                    while (this.platforms.length < 7) {
+                        this.generatePlatform(this.platforms[this.platforms.length - 1].y - 100);
+                    }
+
+                    this.score = Math.floor(this.cameraY / 100);
                 }
                 
-                const containerWidth = gameContainer.clientWidth;
-                const containerHeight = gameContainer.clientHeight;
+                // Проверка на магнит и притягивание монет
+                if (this.player.magnetActive) {
+                    const magnetRadius = 100; // Радиус действия магнита
+                    const playerCenterX = this.player.x + this.player.width / 2;
+                    const playerCenterY = this.player.y + this.player.height / 2;
+                    
+                    this.platforms.forEach(platform => {
+                        // Притягивание первой монеты
+                        if (platform.coin && !platform.coin.collected) {
+                            const coinCenterX = platform.coin.x + platform.coin.width / 2;
+                            const coinCenterY = platform.coin.y + platform.coin.height / 2;
+                            
+                            // Расчет расстояния между игроком и монетой
+                            const dx = playerCenterX - coinCenterX;
+                            const dy = playerCenterY - coinCenterY;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            // Если монета в радиусе действия магнита
+                            if (distance < magnetRadius) {
+                                // Притягиваем монету к игроку
+                                const speed = 5;
+                                const angle = Math.atan2(dy, dx);
+                                platform.coin.x += Math.cos(angle) * speed;
+                                platform.coin.y += Math.sin(angle) * speed;
+                                
+                                // Проверяем, достигла ли монета игрока
+                                if (distance < 20) {
+                                    platform.coin.collected = true;
+                                    
+                                    // Проверка на двойные монеты для золотого скина
+                                    let coinsToAdd = 1;
+                                    if (this.player.doubleCoinsChance > 0 && Math.random() < this.player.doubleCoinsChance) {
+                                        coinsToAdd = 2;
+                                        // Эффект для двойных монет
+                                        this.particles.createCoinEffect(platform.coin.x + 5, platform.coin.y - 5);
+                                    }
+                                    
+                                    this.coins += coinsToAdd;
+                                    localStorage.setItem('doodleJumpCoins', this.coins);
+                                    this.updateCoinCounter();
+                                    this.particles.createCoinEffect(platform.coin.x, platform.coin.y);
+                                }
+                            }
+                        }
+                        
+                        // Притягивание второй монеты, если она есть
+                        if (platform.secondCoin && !platform.secondCoin.collected) {
+                            const coinCenterX = platform.secondCoin.x + platform.secondCoin.width / 2;
+                            const coinCenterY = platform.secondCoin.y + platform.secondCoin.height / 2;
+                            
+                            // Расчет расстояния между игроком и монетой
+                            const dx = playerCenterX - coinCenterX;
+                            const dy = playerCenterY - coinCenterY;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            // Если монета в радиусе действия магнита
+                            if (distance < magnetRadius) {
+                                // Притягиваем монету к игроку
+                                const speed = 5;
+                                const angle = Math.atan2(dy, dx);
+                                platform.secondCoin.x += Math.cos(angle) * speed;
+                                platform.secondCoin.y += Math.sin(angle) * speed;
+                                
+                                // Проверяем, достигла ли монета игрока
+                                if (distance < 20) {
+                                    platform.secondCoin.collected = true;
+                                    this.coins += 1;
+                                    localStorage.setItem('doodleJumpCoins', this.coins);
+                                    this.updateCoinCounter();
+                                    this.particles.createCoinEffect(platform.secondCoin.x, platform.secondCoin.y);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Update platforms and check collisions
+                this.platforms.forEach(platform => {
+                    platform.update(canvasWidth);
+                    
+                    // Power-up collision
+                    if (platform.powerUp && !platform.powerUp.collected &&
+                        this.player.x + this.player.width > platform.powerUp.x &&
+                        this.player.x < platform.powerUp.x + platform.powerUp.width &&
+                        this.player.y + this.player.height > platform.powerUp.y &&
+                        this.player.y < platform.powerUp.y + platform.powerUp.height) {
+                        platform.powerUp.collected = true;
+                        this.player.activatePowerUp(platform.powerUp.type);
+                    }
+                    
+                    // Coin collision
+                    if (platform.coin && !platform.coin.collected &&
+                        this.player.x + this.player.width > platform.coin.x &&
+                        this.player.x < platform.coin.x + platform.coin.width &&
+                        this.player.y + this.player.height > platform.coin.y &&
+                        this.player.y < platform.coin.y + platform.coin.height) {
+                        platform.coin.collected = true;
+                        
+                        // Проверка на двойные монеты для золотого скина
+                        let coinsToAdd = 1;
+                        if (this.player.doubleCoinsChance > 0 && Math.random() < this.player.doubleCoinsChance) {
+                            coinsToAdd = 2;
+                            // Эффект для двойных монет
+                            this.particles.createCoinEffect(platform.coin.x + 5, platform.coin.y - 5);
+                        }
+                        
+                        this.coins += coinsToAdd;
+                        localStorage.setItem('doodleJumpCoins', this.coins);
+                        this.updateCoinCounter();
+                        this.particles.createCoinEffect(platform.coin.x, platform.coin.y);
+                        
+                        // Check if shop should be unlocked
+                        if (this.coins >= 50 && !this.shopUnlocked) {
+                            this.shopUnlocked = true;
+                        }
+                    }
+                    
+                    // Second coin collision
+                    if (platform.secondCoin && !platform.secondCoin.collected &&
+                        this.player.x + this.player.width > platform.secondCoin.x &&
+                        this.player.x < platform.secondCoin.x + platform.secondCoin.width &&
+                        this.player.y + this.player.height > platform.secondCoin.y &&
+                        this.player.y < platform.secondCoin.y + platform.secondCoin.height) {
+                        platform.secondCoin.collected = true;
+                        
+                        this.coins += 1;
+                        localStorage.setItem('doodleJumpCoins', this.coins);
+                        this.updateCoinCounter();
+                        this.particles.createCoinEffect(platform.secondCoin.x, platform.secondCoin.y);
+                        
+                        // Check if shop should be unlocked
+                        if (this.coins >= 50 && !this.shopUnlocked) {
+                            this.shopUnlocked = true;
+                        }
+                    }
+                    
+                    // Platform collision
+                    if (!platform.broken && this.player.velocityY > 0 && 
+                        this.player.x + this.player.width > platform.x &&
+                        this.player.x < platform.x + platform.width &&
+                        this.player.y + this.player.height > platform.y &&
+                        this.player.y + this.player.height < platform.y + platform.height + 10) {
+                        
+                        if (platform.type === 'breakable') {
+                            platform.broken = true;
+                        }
+                        this.player.jump();
+                        this.particles.createJumpEffect(this.player.x, this.player.y + this.player.height);
+                    }
+                });
+
+                // Check game over
+                if (this.player.y > canvasHeight) {
+                    // Проверка на защиту от падения (шляпа)
+                    if (this.player.fallProtection && this.player.skin === 'hat') {
+                        this.player.fallProtection = false; // Используем защиту
+                        
+                        // Находим последнюю платформу для телепортации
+                        let highestPlatform = null;
+                        let highestY = canvasHeight;
+                        
+                        for (const platform of this.platforms) {
+                            if (platform.y < highestY) {
+                                highestY = platform.y;
+                                highestPlatform = platform;
+                            }
+                        }
+                        
+                        if (highestPlatform) {
+                            // Телепортируем игрока на самую высокую платформу
+                            this.player.x = highestPlatform.x + highestPlatform.width / 2 - this.player.width / 2;
+                            this.player.y = highestPlatform.y - this.player.height;
+                        } else {
+                            // Если платформ нет, просто возвращаем наверх
+                            this.player.y = canvasHeight - 100;
+                        }
+                        
+                        this.player.velocityY = -15; // Даем небольшой прыжок
+                        
+                        // Создаем эффект телепортации
+                        this.showTeleportEffect();
+                        
+                        // Создаем уведомление о спасении
+                        this.showNotification('🎩 Шляпа спасла вас от падения!');
+                        
+                        // Эффект использования защиты - больше частиц
+                        for (let i = 0; i < 3; i++) {
+                            this.particles.createJumpEffect(
+                                this.player.x + Math.random() * this.player.width, 
+                                this.player.y + this.player.height
+                            );
+                        }
+                    } else {
+                        this.endGame();
+                    }
+                }
                 
-                // Set canvas dimensions
-                this.canvas.width = containerWidth;
-                this.canvas.height = containerHeight;
+                // Проверка на использование высокого прыжка
+                if (this.player.extraJumpAvailable === false && this.player.skin === 'glasses' && 
+                    this.player.velocityY < -20) {
+                    // Показываем уведомление о высоком прыжке
+                    this.showNotification('👓 Супер-прыжок активирован!');
+                    
+                    // Создаем эффект высокого прыжка
+                    for (let i = 0; i < 10; i++) {
+                        this.particles.createJumpEffect(
+                            this.player.x + Math.random() * this.player.width, 
+                            this.player.y + this.player.height + Math.random() * 20
+                        );
+                    }
+                }
                 
-                // Update game elements if needed
-                if (this.player) {
-                    // Ensure player stays within bounds after resize
-                    this.player.x = Math.min(Math.max(this.player.x, 0), this.canvas.width - this.player.width);
+                // Проверка на получение двойных монет (для золотого скина)
+                // Remove the periodic notification that was showing too frequently
+                /*if (this.player.doubleCoinsChance > 0 && this.player.skin === 'gold' && 
+                    Math.random() < 0.01) {
+                    // Периодически показываем напоминание о бонусе
+                    this.showNotification('💎 Шанс двойных монет активен!');
+                }*/
+                
+                // Создание двойных монет на платформах для золотого скина
+                if (this.player && this.player.skin === 'gold') {
+                    this.platforms.forEach(platform => {
+                        // Если на платформе есть одна монета и она еще не собрана
+                        if (platform.coin && !platform.coin.collected && !platform.hasDoubledCoins && Math.random() < 0.3) {
+                            // Добавляем вторую монету рядом с существующей
+                            const secondCoin = new Coin(
+                                platform.coin.x + 25, // Позиционируем справа от первой монеты
+                                platform.coin.y
+                            );
+                            platform.secondCoin = secondCoin;
+                            platform.hasDoubledCoins = true; // Отмечаем, чтобы избежать добавления большего количества монет
+                        }
+                    });
                 }
             }
 
@@ -2280,6 +2583,10 @@
                 this.difficulty = 1;
                 this.cameraY = 0;
                 
+                // Сброс флагов нажатия клавиш
+                this.leftPressed = false;
+                this.rightPressed = false;
+                
                 // Удаляем класс game-over
                 const gameContainer = document.getElementById('gameContainer');
                 if (gameContainer) {
@@ -2307,6 +2614,28 @@
                 
                 // Always hide stars button
                 buyStarsButton.style.display = 'none';
+            }
+
+            // Resize canvas to fit window
+            resizeCanvas() {
+                const gameContainer = document.getElementById('gameContainer');
+                if (!gameContainer) {
+                    console.error('Game container not found!');
+                    return;
+                }
+                
+                const containerWidth = gameContainer.clientWidth;
+                const containerHeight = gameContainer.clientHeight;
+                
+                // Set canvas dimensions
+                this.canvas.width = containerWidth;
+                this.canvas.height = containerHeight;
+                
+                // Update game elements if needed
+                if (this.player) {
+                    // Ensure player stays within bounds after resize
+                    this.player.x = Math.min(Math.max(this.player.x, 0), this.canvas.width - this.player.width);
+                }
             }
         }
 
