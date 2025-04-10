@@ -2345,27 +2345,27 @@
                         buttonContainer.appendChild(buyButton);
                         
                         // Stars purchase button for premium items
-                        if (item.premium && item.starPrice) {
-                            const orText = document.createElement('span');
-                            orText.className = 'or-text';
-                            orText.textContent = 'или';
-                            buttonContainer.appendChild(orText);
-                            
-                            const starsButton = document.createElement('button');
-                            starsButton.className = 'shop-button stars';
-                            starsButton.textContent = `${item.starPrice} ⭐`;
-                            
-                            if (this.telegramStarsAvailable) {
-                                starsButton.onclick = () => {
-                                    // Implement Telegram Stars purchase logic
-                                    this.showNotification('Покупка за Telegram Stars будет доступна скоро!');
-                                };
-                            } else {
-                                starsButton.disabled = true;
-                                starsButton.title = 'Недоступно в этой версии';
-                            }
-                            
-                            buttonContainer.appendChild(starsButton);
+//                         if (item.premium && item.starPrice) {
+//                             const orText = document.createElement('span');
+//                             orText.className = 'or-text';
+//                             orText.textContent = 'или';
+//                             buttonContainer.appendChild(orText);
+//                             
+//                             const starsButton = document.createElement('button');
+//                             starsButton.className = 'shop-button stars';
+//                             starsButton.textContent = `${item.starPrice} ⭐`;
+//                             
+//                             if (this.telegramStarsAvailable) {
+//                                 starsButton.onclick = () => {
+//                                     // Implement Telegram Stars purchase logic
+//                                     this.showNotification('Покупка за Telegram Stars будет доступна скоро!');
+//                                 };
+//                             } else {
+//                                 starsButton.disabled = true;
+//                                 starsButton.title = 'Недоступно в этой версии';
+//                             }
+// //                             
+//                             buttonContainer.appendChild(starsButton);
                         }
                     }
                     
@@ -2403,9 +2403,9 @@
                 this.particles = new ParticleSystem();
                 
                 // Create initial platforms
-                for (let i = 0; i < 7; i++) {
+                for (let i = 0; i < 10; i++) {
                     const x = Math.random() * (this.canvas.width - 60);
-                    const y = i === 0 ? this.canvas.height - 50 : this.canvas.height - 100 - i * 80;
+                    const y = i === 0 ? this.canvas.height - 50 : this.canvas.height - 100 - i * 60;
                     this.platforms.push(new Platform(x, y, 'normal'));
                 }
                 
