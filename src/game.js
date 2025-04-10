@@ -2049,20 +2049,55 @@
                     this.closeShop();
                 });
 
-                // Обработчики управления
-                document.addEventListener('keydown', this.handleKeyDown);
-                document.addEventListener('keyup', this.handleKeyUp);
+                // Обработчики управления с клавиатуры
+                const handleKeyDown = (e) => {
+                    if (e.code === 'Space') {
+                        if (this.gameOver) {
+                            this.resetGame();
+                        } else if (this.player.skin === 'glasses' && this.player.extraJumpAvailable) {
+                            // Activate double jump with Space key
+                            if (this.player.activateDoubleJump()) {
+                                this.showNotification('👓 Супер-прыжок активирован!');
+                                
+                                // Create visual effect for double jump
+                                for (let i = 0; i < 15; i++) {
+                                    this.particles.createJumpEffect(
+                                        this.player.x + Math.random() * this.player.width, 
+                                        this.player.y + this.player.height + Math.random() * 20
+                                    );
+                                }
+                            }
+                        }
+                    } else if (e.code === 'ArrowLeft') {
+                        this.player.velocityX = -5;
+                        this.hideInstructions();
+                    } else if (e.code === 'ArrowRight') {
+                        this.player.velocityX = 5;
+                        this.hideInstructions();
+                    }
+                };
+
+                const handleKeyUp = (e) => {
+                    if (e.code === 'ArrowLeft' && this.player.velocityX < 0) {
+                        this.player.velocityX = 0;
+                    } else if (e.code === 'ArrowRight' && this.player.velocityX > 0) {
+                        this.player.velocityX = 0;
+                    }
+                };
+
+                document.addEventListener('keydown', handleKeyDown);
+                document.addEventListener('keyup', handleKeyUp);
 
                 // Обработчик для левой зоны касания
                 const leftTouch = document.getElementById('leftTouch');
                 if (leftTouch) {
                     leftTouch.addEventListener('touchstart', () => {
-                        this.keys.ArrowLeft = true;
-                        this.keys.ArrowRight = false;
+                        this.player.velocityX = -5;
+                        this.hideInstructions();
                     });
                     
                     leftTouch.addEventListener('touchend', () => {
-                        this.keys.ArrowLeft = false;
+                        this.player.velocityX = 0;
                     });
                 }
                 
@@ -2070,12 +2105,12 @@
                 const rightTouch = document.getElementById('rightTouch');
                 if (rightTouch) {
                     rightTouch.addEventListener('touchstart', () => {
-                        this.keys.ArrowRight = true;
-                        this.keys.ArrowLeft = false;
+                        this.player.velocityX = 5;
+                        this.hideInstructions();
                     });
                     
                     rightTouch.addEventListener('touchend', () => {
-                        this.keys.ArrowRight = false;
+                        this.player.velocityX = 0;
                     });
                 }
 
@@ -2183,8 +2218,6 @@
             const ctx = canvas.getContext('2d');
             const container = document.getElementById('gameContainer');
             const startScreen = document.getElementById('startScreen');
-            const startBtn = document.getElementById('startBtn');
-            const restartBtn = document.getElementById('restartBtn');
             const leftTouch = document.getElementById('leftTouch');
             const rightTouch = document.getElementById('rightTouch');
             
@@ -2211,6 +2244,15 @@
                 console.log("Game создан:", game);
                 game.init();
                 console.log("Game инициализирован");
+                
+                // Инициализируем игру сразу
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    console.log("Кнопка старта нажата");
+                    if (game) {
+                        game.startGame();
+                        gameStarted = true;
+                    }
+                });
             }
             
             // Resize canvas based on device
@@ -2239,132 +2281,6 @@
                     game.player.x = Math.min(Math.max(game.player.x, 0), canvas.width - game.player.width);
                 }
             }
-            
-            // Start game
-            function handleStartGame(e) {
-                console.log("handleStartGame вызвана");
-                if (e) e.preventDefault();
-                console.log("gameStarted:", gameStarted);
-                if (!gameStarted) {
-                    console.log("Инициализация игры");
-                    initGame();
-                    console.log("game после initGame:", game);
-                    if (game) {
-                        console.log("Запуск игры");
-                    game.startGame();
-                    gameStarted = true;
-                        console.log("gameStarted установлен в true");
-                    } else {
-                        console.error("Не удалось инициализировать игру!");
-                    }
-                }
-            }
-            
-            // Restart game
-            function handleRestartGame(e) {
-                if (e) e.preventDefault();
-                if (game) {
-                    game.resetGame();
-                    game.startGame();
-                    gameStarted = true;
-                } else {
-                    initGame();
-                    game.startGame();
-                    gameStarted = true;
-                }
-            }
-            
-            // Open shop
-            function handleOpenShop(e) {
-                if (e) e.preventDefault();
-                if (game) {
-                    game.showShop();
-                }
-            }
-            
-            // Set up event listeners
-            startBtn.addEventListener('click', handleStartGame);
-            startBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                handleStartGame(e);
-            }, { passive: false });
-            
-            // Обработчики для кнопки перезапуска
-            restartBtn.addEventListener('click', handleRestartGame);
-            restartBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                handleRestartGame(e);
-            }, { passive: false });
-            
-            // Добавляем обработчик для кнопки магазина в игровом интерфейсе
-            const shopBtnInGame = document.getElementById('shopBtnInGame');
-            if (shopBtnInGame) {
-                shopBtnInGame.addEventListener('click', handleOpenShop);
-                shopBtnInGame.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    handleOpenShop(e);
-                }, { passive: false });
-            } else {
-                console.error("Кнопка магазина не найдена в DOM!");
-            }
-            
-            // Добавляем обработчик для кнопки закрытия магазина
-            const closeShopBtn = document.querySelector('.shop-close');
-            if (closeShopBtn) {
-                closeShopBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (game) {
-                        game.closeShop();
-                    }
-                });
-                
-                closeShopBtn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    if (game) {
-                        game.closeShop();
-                    }
-                }, { passive: false });
-            }
-            
-            // Desktop controls
-            window.addEventListener('keydown', (e) => {
-                if (!game) return;
-                
-                if (e.code === 'Space') {
-                    if (game.gameOver) {
-                        handleRestartGame();
-                    } else if (game.player.skin === 'glasses' && game.player.extraJumpAvailable) {
-                        // Activate double jump with Space key
-                        if (game.player.activateDoubleJump()) {
-                            game.showNotification('👓 Супер-прыжок активирован!');
-                            
-                            // Create visual effect for double jump
-                            for (let i = 0; i < 15; i++) {
-                                game.particles.createJumpEffect(
-                                    game.player.x + Math.random() * game.player.width, 
-                                    game.player.y + game.player.height + Math.random() * 20
-                                );
-                            }
-                        }
-                    }
-                } else if (e.code === 'ArrowLeft') {
-                    game.player.velocityX = -5;
-                    game.hideInstructions();
-                } else if (e.code === 'ArrowRight') {
-                    game.player.velocityX = 5;
-                    game.hideInstructions();
-                }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                if (!game) return;
-                
-                if (e.code === 'ArrowLeft' && game.player.velocityX < 0) {
-                    game.player.velocityX = 0;
-                } else if (e.code === 'ArrowRight' && game.player.velocityX > 0) {
-                    game.player.velocityX = 0;
-                }
-            });
             
             // Mobile touch controls
             // Variables for double tap detection
@@ -2433,4 +2349,6 @@
             
             // Initial setup
             resizeCanvas();
+            // Initialize the game
+            initGame();
         });
