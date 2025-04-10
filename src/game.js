@@ -154,7 +154,7 @@
                 this.width = 40;
                 this.height = 40;
                 this.velocityX = 0;
-                this.velocityY = 0;  // Явно устанавливаем нулевую вертикальную скорость при создании
+                this.velocityY = 0;
                 this.isJumping = false;
                 this.powerUpTimer = 0;
                 this.hasPowerUp = false;
@@ -658,8 +658,7 @@
             }
 
             jump(force = -12) {
-                // Всегда используем фиксированное значение -12 для стандартного прыжка
-                this.velocityY = -12;
+                this.velocityY = force;
                 this.isJumping = true;
             }
 
@@ -1742,141 +1741,151 @@
 
             // Show shop modal
             showShop() {
+                // Если игра закончилась, скрыть кнопки рестарта и магазина
+                if (this.gameOver) {
+                    this.hideRestartButton();
+                    this.hideShopButton();
+                }
+
+                // Показать модальное окно магазина
                 const shopModal = document.getElementById('shopModal');
-                if (!shopModal) {
-                    console.error('Shop modal element not found!');
-                    return;
-                }
-                
-                // Скрываем кнопки управления перед открытием магазина
-                const controlButtons = document.getElementById('controlButtons');
-                if (controlButtons) {
-                    controlButtons.style.display = 'none';
-                }
-                
-                // Update shop coins display
-                const shopCoins = document.getElementById('shopCoins');
-                if (shopCoins) {
-                    shopCoins.textContent = this.coins;
-                }
-                
+                shopModal.style.display = 'flex';
+
+                // Обновляем отображение монет
+                document.getElementById('shopCoins').textContent = this.coins;
+
+                // Очищаем контейнер товаров
                 const shopItemsContainer = document.getElementById('shopItems');
-                if (!shopItemsContainer) {
-                    console.error('Shop items container not found!');
-                    return;
-                }
-                
                 shopItemsContainer.innerHTML = '';
-                
-                this.shopItems.forEach(item => {
-                    const isOwned = this.ownedSkins.includes(item.id);
-                    const canAfford = this.coins >= item.price;
+
+                // Создаем элементы для каждого скина
+                Object.keys(this.availableSkins).forEach(skinId => {
+                    const skin = this.availableSkins[skinId];
                     
+                    // Создаем элемент товара
                     const itemElement = document.createElement('div');
-                    itemElement.className = `shop-item ${item.premium ? 'premium' : ''}`;
+                    itemElement.classList.add('shop-item');
+                    if (skin.premium) {
+                        itemElement.classList.add('premium');
+                    }
                     
-                    // Item image
+                    // Создаем изображение скина
                     const imageContainer = document.createElement('div');
-                    imageContainer.className = 'shop-item-image';
+                    imageContainer.classList.add('shop-item-image');
                     
-                    // Use emoji instead of image
-                    const emoji = document.createElement('span');
-                    emoji.textContent = item.emoji || '🎮';
-                    emoji.style.fontSize = '32px';
-                    imageContainer.appendChild(emoji);
+                    // Создаем canvas для отрисовки скина
+                    const skinCanvas = document.createElement('canvas');
+                    skinCanvas.width = 60;
+                    skinCanvas.height = 60;
+                    const skinCtx = skinCanvas.getContext('2d');
                     
-                    itemElement.appendChild(imageContainer);
+                    // Рисуем скин на canvas
+                    const tempPlayer = new Player(30, 30, skinId);
+                    tempPlayer.draw(skinCtx);
                     
-                    // Item info
-                    const infoContainer = document.createElement('div');
-                    infoContainer.className = 'shop-item-info';
+                    imageContainer.appendChild(skinCanvas);
                     
+                    // Создаем контейнер для информации
+                    const infoElement = document.createElement('div');
+                    infoElement.classList.add('shop-item-info');
+                    
+                    // Название скина
                     const nameElement = document.createElement('div');
-                    nameElement.className = 'shop-item-name';
-                    nameElement.textContent = item.name;
-                    infoContainer.appendChild(nameElement);
+                    nameElement.classList.add('shop-item-name');
+                    nameElement.textContent = skin.name;
                     
+                    // Описание скина
                     const descElement = document.createElement('div');
-                    descElement.className = 'shop-item-description';
-                    descElement.textContent = item.description;
-                    infoContainer.appendChild(descElement);
+                    descElement.classList.add('shop-item-description');
+                    descElement.textContent = skin.description || 'Классный скин для вашего персонажа!';
                     
-                    itemElement.appendChild(infoContainer);
+                    // Контейнер для кнопок
+                    const buttonsElement = document.createElement('div');
+                    buttonsElement.classList.add('shop-item-buttons');
                     
-                    // Button container
-                    const buttonContainer = document.createElement('div');
-                    buttonContainer.className = 'shop-item-buttons';
+                    // Проверяем, владеет ли игрок этим скином
+                    const isOwned = this.ownedSkins.includes(skinId);
+                    const isSelected = this.player.skin === skinId;
                     
+                    // Если игрок владеет скином
                     if (isOwned) {
-                        const ownedButton = document.createElement('button');
-                        ownedButton.className = 'shop-button owned';
-                        ownedButton.textContent = 'Куплено';
-                        ownedButton.disabled = true;
-                        buttonContainer.appendChild(ownedButton);
-                        
+                        // Кнопка выбора скина
                         const selectButton = document.createElement('button');
-                        selectButton.className = 'shop-button select';
-                        selectButton.textContent = this.player.skin === item.id ? 'Выбрано' : 'Выбрать';
-                        selectButton.disabled = this.player.skin === item.id;
-                        selectButton.onclick = () => {
-                            this.player.setSkin(item.id);
-                            localStorage.setItem('doodleJumpSelectedSkin', item.id);
-                            this.showNotification(`Выбран скин: ${item.name}`);
-                            this.showSkinAbilityNotification();
-                            this.showShop(); // Refresh shop to update buttons
-                        };
-                        buttonContainer.appendChild(selectButton);
-                    } else {
-                        // Regular coin purchase button
-                        const buyButton = document.createElement('button');
-                        buyButton.className = 'shop-button buy';
-                        buyButton.textContent = `${item.price} 🪙`;
-                        buyButton.disabled = !canAfford;
+                        selectButton.classList.add('shop-button', 'select');
+                        selectButton.textContent = isSelected ? 'Выбрано' : 'Выбрать';
+                        selectButton.disabled = isSelected;
                         
-                        if (canAfford) {
-                            buyButton.onclick = () => {
-                                this.coins -= item.price;
-                                localStorage.setItem('doodleJumpCoins', this.coins);
-                                this.ownedSkins.push(item.id);
-                                localStorage.setItem('doodleJumpOwnedSkins', JSON.stringify(this.ownedSkins));
-                                this.updateCoinCounter();
-                                this.showNotification(`Куплен скин: ${item.name}!`);
-                                this.showShop(); // Refresh shop
-                            };
+                        if (!isSelected) {
+                            selectButton.addEventListener('click', () => {
+                                this.selectSkin(skinId);
+                                this.updateShopButtons(skinId);
+                                this.showShopMessage(`Скин ${skin.name} выбран!`);
+                            });
                         }
                         
-                        buttonContainer.appendChild(buyButton);
+                        buttonsElement.appendChild(selectButton);
+                    } else {
+                        // Кнопка покупки за монеты
+                        const buyButton = document.createElement('button');
+                        buyButton.classList.add('shop-button', 'buy');
+                        buyButton.textContent = `${skin.price} 🪙`;
                         
-                        // Stars purchase button for premium items
-                        if (item.premium && item.starPrice) {
+                        // Проверяем, достаточно ли монет
+                        const canBuy = this.coins >= skin.price;
+                        buyButton.disabled = !canBuy;
+                        
+                        if (canBuy) {
+                            buyButton.addEventListener('click', () => {
+                                if (this.coins >= skin.price) {
+                                    this.coins -= skin.price;
+                                    this.ownedSkins.push(skinId);
+                                    this.updateCoinCounter();
+                                    this.saveGameState();
+                                    
+                                    // Обновляем кнопки
+                                    this.showShop();
+                                    this.showShopMessage(`Вы приобрели скин ${skin.name}!`);
+                                }
+                            });
+                        }
+                        
+                        buttonsElement.appendChild(buyButton);
+                        
+                        // Если скин премиум, добавляем кнопку покупки за Stars
+                        if (skin.premium) {
                             const orText = document.createElement('span');
-                            orText.className = 'or-text';
+                            orText.classList.add('or-text');
                             orText.textContent = 'или';
-                            buttonContainer.appendChild(orText);
+                            buttonsElement.appendChild(orText);
                             
                             const starsButton = document.createElement('button');
-                            starsButton.className = 'shop-button stars';
-                            starsButton.textContent = `${item.starPrice} ⭐`;
+                            starsButton.classList.add('shop-button', 'stars');
+                            starsButton.innerHTML = `<span class="stars-icon">⭐</span> Stars`;
                             
-                            if (this.telegramStarsAvailable) {
-                                starsButton.onclick = () => {
-                                    // Implement Telegram Stars purchase logic
-                                    this.showNotification('Покупка за Telegram Stars будет доступна скоро!');
-                                };
-                            } else {
-                                starsButton.disabled = true;
-                                starsButton.title = 'Недоступно в этой версии';
-                            }
+                            starsButton.addEventListener('click', () => {
+                                this.buyWithTelegramStars(skinId);
+                            });
                             
-                            buttonContainer.appendChild(starsButton);
+                            buttonsElement.appendChild(starsButton);
                         }
                     }
                     
-                    itemElement.appendChild(buttonContainer);
+                    // Собираем элементы
+                    infoElement.appendChild(nameElement);
+                    infoElement.appendChild(descElement);
+                    infoElement.appendChild(buttonsElement);
+                    
+                    itemElement.appendChild(imageContainer);
+                    itemElement.appendChild(infoElement);
+                    
+                    // Добавляем в контейнер магазина
                     shopItemsContainer.appendChild(itemElement);
                 });
                 
-                shopModal.style.display = 'flex';
+                // Устанавливаем обработчик для кнопки закрытия
+                document.getElementById('closeShopButton').addEventListener('click', () => {
+                    this.closeShop();
+                });
             }
 
             // Clear any existing notifications
@@ -1892,9 +1901,28 @@
                 }
             }
             
+            // Game loop method
+            gameLoop() {
+                // Обновление игры происходит только если игра не завершена
+                if (!this.gameOver) {
+                    this.update();
+                }
+                // Отрисовка происходит всегда
+                this.draw();
+                // Цикл продолжается всегда
+                this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
+            }
+            
             // Start the game
             startGame() {
                 console.log("Game.startGame() вызван");
+                
+                // Завершаем предыдущий игровой цикл, если он был запущен
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                    this.animationFrameId = null;
+                }
+                
                 // Clear any existing notifications
                 this.clearNotifications();
                 
@@ -1913,10 +1941,9 @@
                     this.platforms.push(new Platform(x, y, 'normal'));
                 }
                 
-                // Create player with the selected skin and explicit velocityY = 0
+                // Create player with the selected skin
                 const selectedSkin = localStorage.getItem('doodleJumpSelectedSkin') || 'default';
                 this.player = new Player(this.canvas.width / 2, this.canvas.height - 100, selectedSkin);
-                this.player.velocityY = 0; // Явно устанавливаем нулевую скорость
                 
                 // Initialize player position on the first platform
                 this.initializePlayerPosition();
@@ -1955,58 +1982,39 @@
                 this.player.velocityY = 0;
             }
             
-            // Hide restart button
+            // Скрыть кнопку рестарта
             hideRestartButton() {
-                const restartBtn = document.getElementById('restartBtn');
-                if (restartBtn) {
-                    restartBtn.style.display = 'none';
+                const restartButton = document.getElementById('restartButton');
+                if (restartButton) {
+                    restartButton.style.display = 'none';
                 }
             }
             
-            // Show restart button
-            showRestartButton() {
-                const restartBtn = document.getElementById('restartBtn');
-                if (restartBtn) {
-                    restartBtn.style.display = 'block';
-                }
-            }
-            
-            // Hide shop button
+            // Скрыть кнопку магазина
             hideShopButton() {
-                const shopBtnInGame = document.getElementById('shopBtnInGame');
-                if (shopBtnInGame) {
-                    shopBtnInGame.style.display = 'none';
+                const shopButton = document.getElementById('shopButton');
+                if (shopButton) {
+                    shopButton.style.display = 'none';
                 }
             }
             
-            // Show shop button
-            showShopButton() {
-                const shopBtnInGame = document.getElementById('shopBtnInGame');
-                if (shopBtnInGame) {
-                    shopBtnInGame.style.display = 'block';
+            // Показать сообщение в магазине
+            showShopMessage(message) {
+                const messageElement = document.getElementById('shopMessage');
+                if (messageElement) {
+                    messageElement.textContent = message;
+                    messageElement.style.display = 'block';
+                    setTimeout(() => {
+                        messageElement.style.display = 'none';
+                    }, 3000);
                 }
             }
             
-            // Show start message with game instructions
-            showStartMessage() {
-                // Show instructions at the bottom of the screen
-                const instructions = document.getElementById('gameInstructions');
-                if (instructions) {
-                    instructions.style.display = 'block';
-                    
-                    // Hide instructions after 5 seconds
-                    setTimeout(() => {
-                        instructions.style.display = 'none';
-                    }, 5000);
-                }
-                
-                // If player has a skin with special abilities, show ability notification
-                // with a slight delay to avoid overlapping with other notifications
-                if (this.player.skin && this.player.skin !== 'default') {
-                    setTimeout(() => {
-                        this.showSkinAbilityNotification();
-                    }, 1000);
-                }
+            // Покупка с использованием Telegram Stars
+            buyWithTelegramStars(skin) {
+                // Здесь будет реализация покупки с использованием Telegram Stars
+                // Пока просто показываем сообщение
+                this.showShopMessage('Покупка за Stars скоро будет доступна!');
             }
 
             // Close shop modal
@@ -2014,14 +2022,6 @@
                 const shopModal = document.getElementById('shopModal');
                 if (shopModal) {
                     shopModal.style.display = 'none';
-                    
-                    // Если игра завершена, показываем кнопки управления снова
-                    if (this.gameOver) {
-                        const controlButtons = document.getElementById('controlButtons');
-                        if (controlButtons) {
-                            controlButtons.style.display = 'flex';
-                        }
-                    }
                 } else {
                     console.error('Shop modal element not found!');
                 }
@@ -2029,629 +2029,151 @@
 
             // Set up event listeners
             setupEventListeners() {
-                // Удаляем старые обработчики перед добавлением новых
-                this.removeEventListeners();
-                
-                // Keyboard controls
-                this.keyDownHandler = (e) => {
-                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                        this.leftPressed = true;
-                    }
-                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                        this.rightPressed = true;
-                    }
-                };
-                
-                this.keyUpHandler = (e) => {
-                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                        this.leftPressed = false;
-                    }
-                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                        this.rightPressed = false;
-                    }
-                };
-                
-                document.addEventListener('keydown', this.keyDownHandler);
-                document.addEventListener('keyup', this.keyUpHandler);
-                
-                // Touch controls for mobile
-                if (this.isMobile) {
-                    this.deviceOrientationHandler = (e) => {
-                        if (this.gameStarted && !this.gameOver) {
-                            const tilt = e.gamma; // Left-right tilt in degrees
-                            
-                            if (tilt > 5) { // Tilting right
-                                this.rightPressed = true;
-                                this.leftPressed = false;
-                            } else if (tilt < -5) { // Tilting left
-                                this.leftPressed = true;
-                                this.rightPressed = false;
-                            } else { // Neutral position
-                                this.leftPressed = false;
-                                this.rightPressed = false;
-                            }
-                        }
-                    };
-                    
-                    window.addEventListener('deviceorientation', this.deviceOrientationHandler);
-                } else {
-                    // Mouse controls for desktop
-                    this.mouseMoveHandler = (e) => {
-                        if (this.gameStarted && !this.gameOver) {
-                            const rect = this.canvas.getBoundingClientRect();
-                            const mouseX = e.clientX - rect.left;
-                            
-                            if (mouseX < this.player.x - 10) {
-                                this.leftPressed = true;
-                                this.rightPressed = false;
-                            } else if (mouseX > this.player.x + 10) {
-                                this.rightPressed = true;
-                                this.leftPressed = false;
-                            } else {
-                                this.leftPressed = false;
-                                this.rightPressed = false;
-                            }
-                        }
-                    };
-                    
-                    this.canvas.addEventListener('mousemove', this.mouseMoveHandler);
-                }
-                
-                // Double tap for super jump with glasses
-                let lastTap = 0;
-                this.clickHandler = (e) => {
-                    const currentTime = new Date().getTime();
-                    const tapLength = currentTime - lastTap;
-                    
-                    if (tapLength < 300 && tapLength > 0) {
-                        // Double tap detected
-                        if (this.gameStarted && !this.gameOver && this.player.skin === 'glasses') {
-                            this.player.velocity.y = -15; // Super jump
-                            this.showNotification('Супер-прыжок!');
-                        }
-                    }
-                    
-                    lastTap = currentTime;
-                };
-                
-                this.canvas.addEventListener('click', this.clickHandler);
-                
-                // Double-click for desktop to activate glasses superpower
-                this.dblClickHandler = () => {
-                    if (this.player && this.player.skin === 'glasses' && this.player.extraJumpAvailable) {
-                        if (this.player.activateDoubleJump()) {
-                            this.showNotification('👓 Супер-прыжок активирован!');
-                            
-                            // Create visual effect for double jump
-                            for (let i = 0; i < 15; i++) {
-                                this.particles.createJumpEffect(
-                                    this.player.x + Math.random() * this.player.width, 
-                                    this.player.y + this.player.height + Math.random() * 20
-                                );
-                            }
-                        }
-                    }
-                };
-                
-                this.canvas.addEventListener('dblclick', this.dblClickHandler);
-            }
-            
-            // Метод для удаления всех обработчиков событий
-            removeEventListeners() {
-                if (this.keyDownHandler) {
-                    document.removeEventListener('keydown', this.keyDownHandler);
-                }
-                if (this.keyUpHandler) {
-                    document.removeEventListener('keyup', this.keyUpHandler);
-                }
-                if (this.deviceOrientationHandler) {
-                    window.removeEventListener('deviceorientation', this.deviceOrientationHandler);
-                }
-                if (this.mouseMoveHandler && this.canvas) {
-                    this.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
-                }
-                if (this.clickHandler && this.canvas) {
-                    this.canvas.removeEventListener('click', this.clickHandler);
-                }
-                if (this.dblClickHandler && this.canvas) {
-                    this.canvas.removeEventListener('dblclick', this.dblClickHandler);
-                }
-            }
-            
-            // Update method that controls player movement
-            update() {
-                if (this.gameOver) return;
-
-                const canvasWidth = this.canvas.width;
-                const canvasHeight = this.canvas.height;
-                
-                // Обработка перемещения игрока на основе нажатых клавиш
-                if (this.leftPressed) {
-                    this.player.velocityX = -5;
-                } else if (this.rightPressed) {
-                    this.player.velocityX = 5;
-                } else {
-                    this.player.velocityX = 0;
-                }
-
-                this.player.update(canvasWidth);
-                this.particles.update();
-
-                // Update difficulty
-                this.difficulty = 1 + Math.floor(this.score / 1000);
-
-                // Camera follow
-                if (this.player.y < canvasHeight / 2) {
-                    const diff = canvasHeight / 2 - this.player.y;
-                    this.cameraY += diff;
-                    this.player.y += diff;
-                    
-                    this.platforms.forEach(platform => {
-                        platform.y += diff;
-                        if (platform.powerUp) {
-                            platform.powerUp.y += diff;
-                        }
-                        if (platform.coin) {
-                            platform.coin.y += diff;
-                        }
-                        if (platform.secondCoin) {
-                            platform.secondCoin.y += diff;
-                        }
-                    });
-
-                    // Remove platforms that are off screen
-                    this.platforms = this.platforms.filter(platform => platform.y < canvasHeight);
-
-                    // Generate new platforms
-                    while (this.platforms.length < 7) {
-                        this.generatePlatform(this.platforms[this.platforms.length - 1].y - 100);
-                    }
-
-                    this.score = Math.floor(this.cameraY / 100);
-                }
-                
-                // Проверка на магнит и притягивание монет
-                if (this.player.magnetActive) {
-                    const magnetRadius = 100; // Радиус действия магнита
-                    const playerCenterX = this.player.x + this.player.width / 2;
-                    const playerCenterY = this.player.y + this.player.height / 2;
-                    
-                    this.platforms.forEach(platform => {
-                        // Притягивание первой монеты
-                        if (platform.coin && !platform.coin.collected) {
-                            const coinCenterX = platform.coin.x + platform.coin.width / 2;
-                            const coinCenterY = platform.coin.y + platform.coin.height / 2;
-                            
-                            // Расчет расстояния между игроком и монетой
-                            const dx = playerCenterX - coinCenterX;
-                            const dy = playerCenterY - coinCenterY;
-                            const distance = Math.sqrt(dx * dx + dy * dy);
-                            
-                            // Если монета в радиусе действия магнита
-                            if (distance < magnetRadius) {
-                                // Притягиваем монету к игроку
-                                const speed = 5;
-                                const angle = Math.atan2(dy, dx);
-                                platform.coin.x += Math.cos(angle) * speed;
-                                platform.coin.y += Math.sin(angle) * speed;
-                                
-                                // Проверяем, достигла ли монета игрока
-                                if (distance < 20) {
-                                    platform.coin.collected = true;
-                                    
-                                    // Проверка на двойные монеты для золотого скина
-                                    let coinsToAdd = 1;
-                                    if (this.player.doubleCoinsChance > 0 && Math.random() < this.player.doubleCoinsChance) {
-                                        coinsToAdd = 2;
-                                        // Эффект для двойных монет
-                                        this.particles.createCoinEffect(platform.coin.x + 5, platform.coin.y - 5);
-                                    }
-                                    
-                                    this.coins += coinsToAdd;
-                                    localStorage.setItem('doodleJumpCoins', this.coins);
-                                    this.updateCoinCounter();
-                                    this.particles.createCoinEffect(platform.coin.x, platform.coin.y);
-                                }
-                            }
-                        }
-                        
-                        // Притягивание второй монеты, если она есть
-                        if (platform.secondCoin && !platform.secondCoin.collected) {
-                            const coinCenterX = platform.secondCoin.x + platform.secondCoin.width / 2;
-                            const coinCenterY = platform.secondCoin.y + platform.secondCoin.height / 2;
-                            
-                            // Расчет расстояния между игроком и монетой
-                            const dx = playerCenterX - coinCenterX;
-                            const dy = playerCenterY - coinCenterY;
-                            const distance = Math.sqrt(dx * dx + dy * dy);
-                            
-                            // Если монета в радиусе действия магнита
-                            if (distance < magnetRadius) {
-                                // Притягиваем монету к игроку
-                                const speed = 5;
-                                const angle = Math.atan2(dy, dx);
-                                platform.secondCoin.x += Math.cos(angle) * speed;
-                                platform.secondCoin.y += Math.sin(angle) * speed;
-                                
-                                // Проверяем, достигла ли монета игрока
-                                if (distance < 20) {
-                                    platform.secondCoin.collected = true;
-                                    this.coins += 1;
-                                    localStorage.setItem('doodleJumpCoins', this.coins);
-                                    this.updateCoinCounter();
-                                    this.particles.createCoinEffect(platform.secondCoin.x, platform.secondCoin.y);
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Update platforms and check collisions
-                this.platforms.forEach(platform => {
-                    platform.update(canvasWidth);
-                    
-                    // Power-up collision
-                    if (platform.powerUp && !platform.powerUp.collected &&
-                        this.player.x + this.player.width > platform.powerUp.x &&
-                        this.player.x < platform.powerUp.x + platform.powerUp.width &&
-                        this.player.y + this.player.height > platform.powerUp.y &&
-                        this.player.y < platform.powerUp.y + platform.powerUp.height) {
-                        platform.powerUp.collected = true;
-                        this.player.activatePowerUp(platform.powerUp.type);
-                    }
-                    
-                    // Coin collision
-                    if (platform.coin && !platform.coin.collected &&
-                        this.player.x + this.player.width > platform.coin.x &&
-                        this.player.x < platform.coin.x + platform.coin.width &&
-                        this.player.y + this.player.height > platform.coin.y &&
-                        this.player.y < platform.coin.y + platform.coin.height) {
-                        platform.coin.collected = true;
-                        
-                        // Проверка на двойные монеты для золотого скина
-                        let coinsToAdd = 1;
-                        if (this.player.doubleCoinsChance > 0 && Math.random() < this.player.doubleCoinsChance) {
-                            coinsToAdd = 2;
-                            // Эффект для двойных монет
-                            this.particles.createCoinEffect(platform.coin.x + 5, platform.coin.y - 5);
-                        }
-                        
-                        this.coins += coinsToAdd;
-                        localStorage.setItem('doodleJumpCoins', this.coins);
-                        this.updateCoinCounter();
-                        this.particles.createCoinEffect(platform.coin.x, platform.coin.y);
-                        
-                        // Check if shop should be unlocked
-                        if (this.coins >= 50 && !this.shopUnlocked) {
-                            this.shopUnlocked = true;
-                        }
-                    }
-                    
-                    // Second coin collision
-                    if (platform.secondCoin && !platform.secondCoin.collected &&
-                        this.player.x + this.player.width > platform.secondCoin.x &&
-                        this.player.x < platform.secondCoin.x + platform.secondCoin.width &&
-                        this.player.y + this.player.height > platform.secondCoin.y &&
-                        this.player.y < platform.secondCoin.y + platform.secondCoin.height) {
-                        platform.secondCoin.collected = true;
-                        
-                        this.coins += 1;
-                        localStorage.setItem('doodleJumpCoins', this.coins);
-                        this.updateCoinCounter();
-                        this.particles.createCoinEffect(platform.secondCoin.x, platform.secondCoin.y);
-                        
-                        // Check if shop should be unlocked
-                        if (this.coins >= 50 && !this.shopUnlocked) {
-                            this.shopUnlocked = true;
-                        }
-                    }
-                    
-                    // Platform collision
-                    if (!platform.broken && this.player.velocityY > 0 && 
-                        this.player.x + this.player.width > platform.x &&
-                        this.player.x < platform.x + platform.width &&
-                        this.player.y + this.player.height > platform.y &&
-                        this.player.y + this.player.height < platform.y + platform.height + 10) {
-                        
-                        if (platform.type === 'breakable') {
-                            platform.broken = true;
-                        }
-                        this.player.jump();
-                        this.particles.createJumpEffect(this.player.x, this.player.y + this.player.height);
-                    }
+                // Кнопка старта
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    this.startGame();
                 });
 
-                // Check game over
-                if (this.player.y > canvasHeight) {
-                    // Проверка на защиту от падения (шляпа)
-                    if (this.player.fallProtection && this.player.skin === 'hat') {
-                        this.player.fallProtection = false; // Используем защиту
-                        
-                        // Находим последнюю платформу для телепортации
-                        let highestPlatform = null;
-                        let highestY = canvasHeight;
-                        
-                        for (const platform of this.platforms) {
-                            if (platform.y < highestY) {
-                                highestY = platform.y;
-                                highestPlatform = platform;
-                            }
-                        }
-                        
-                        if (highestPlatform) {
-                            // Телепортируем игрока на самую высокую платформу
-                            this.player.x = highestPlatform.x + highestPlatform.width / 2 - this.player.width / 2;
-                            this.player.y = highestPlatform.y - this.player.height;
-                        } else {
-                            // Если платформ нет, просто возвращаем наверх
-                            this.player.y = canvasHeight - 100;
-                        }
-                        
-                        this.player.velocityY = -15; // Даем небольшой прыжок
-                        
-                        // Создаем эффект телепортации
-                        this.showTeleportEffect();
-                        
-                        // Создаем уведомление о спасении
-                        this.showNotification('🎩 Шляпа спасла вас от падения!');
-                        
-                        // Эффект использования защиты - больше частиц
-                        for (let i = 0; i < 3; i++) {
-                            this.particles.createJumpEffect(
-                                this.player.x + Math.random() * this.player.width, 
-                                this.player.y + this.player.height
-                            );
-                        }
-                    } else {
-                        this.endGame();
-                    }
-                }
-                
-                // Проверка на использование высокого прыжка
-                if (this.player.extraJumpAvailable === false && this.player.skin === 'glasses' && 
-                    this.player.velocityY < -20) {
-                    // Показываем уведомление о высоком прыжке
-                    this.showNotification('👓 Супер-прыжок активирован!');
+                // Кнопка перезапуска
+                document.getElementById('restartButton').addEventListener('click', () => {
+                    this.resetGame();
+                });
+
+                // Кнопка магазина в игре
+                document.getElementById('shopButton').addEventListener('click', () => {
+                    this.showShop();
+                });
+
+                // Кнопка закрытия магазина
+                document.getElementById('closeShopButton').addEventListener('click', () => {
+                    this.closeShop();
+                });
+
+                // Обработчики управления
+                document.addEventListener('keydown', this.handleKeyDown);
+                document.addEventListener('keyup', this.handleKeyUp);
+
+                // Обработчик для левой зоны касания
+                const leftTouch = document.getElementById('leftTouch');
+                if (leftTouch) {
+                    leftTouch.addEventListener('touchstart', () => {
+                        this.keys.ArrowLeft = true;
+                        this.keys.ArrowRight = false;
+                    });
                     
-                    // Создаем эффект высокого прыжка
-                    for (let i = 0; i < 10; i++) {
-                        this.particles.createJumpEffect(
-                            this.player.x + Math.random() * this.player.width, 
-                            this.player.y + this.player.height + Math.random() * 20
-                        );
-                    }
-                }
-                
-                // Проверка на получение двойных монет (для золотого скина)
-                // Remove the periodic notification that was showing too frequently
-                /*if (this.player.doubleCoinsChance > 0 && this.player.skin === 'gold' && 
-                    Math.random() < 0.01) {
-                    // Периодически показываем напоминание о бонусе
-                    this.showNotification('💎 Шанс двойных монет активен!');
-                }*/
-                
-                // Создание двойных монет на платформах для золотого скина
-                if (this.player && this.player.skin === 'gold') {
-                    this.platforms.forEach(platform => {
-                        // Если на платформе есть одна монета и она еще не собрана
-                        if (platform.coin && !platform.coin.collected && !platform.hasDoubledCoins && Math.random() < 0.3) {
-                            // Добавляем вторую монету рядом с существующей
-                            const secondCoin = new Coin(
-                                platform.coin.x + 25, // Позиционируем справа от первой монеты
-                                platform.coin.y
-                            );
-                            platform.secondCoin = secondCoin;
-                            platform.hasDoubledCoins = true; // Отмечаем, чтобы избежать добавления большего количества монет
-                        }
+                    leftTouch.addEventListener('touchend', () => {
+                        this.keys.ArrowLeft = false;
                     });
                 }
-            }
-
-            // Game loop method
-            gameLoop() {
-                // Обновление игры происходит только если игра не завершена
-                if (!this.gameOver) {
-                    this.update();
+                
+                // Обработчик для правой зоны касания
+                const rightTouch = document.getElementById('rightTouch');
+                if (rightTouch) {
+                    rightTouch.addEventListener('touchstart', () => {
+                        this.keys.ArrowRight = true;
+                        this.keys.ArrowLeft = false;
+                    });
+                    
+                    rightTouch.addEventListener('touchend', () => {
+                        this.keys.ArrowRight = false;
+                    });
                 }
-                // Отрисовка происходит всегда
-                this.draw();
-                // Цикл продолжается всегда
-                requestAnimationFrame(() => this.gameLoop());
+
+                // Обработчик изменения размера окна
+                window.addEventListener('resize', () => {
+                    this.resizeCanvas();
+                });
             }
 
-            // Переименовываем метод с gameOver на endGame
+            // ... existing code ...
+            // Выбрать скин
+            selectSkin(skinId) {
+                this.player.setSkin(skinId);
+                localStorage.setItem('jumperBoxSelectedSkin', skinId);
+                
+                // Показываем способности скина, если они есть
+                if (skinId !== 'default') {
+                    this.showSkinAbilityNotification();
+                }
+            }
+            
+            // Сохранить состояние игры
+            saveGameState() {
+                localStorage.setItem('jumperBoxCoins', this.coins);
+                localStorage.setItem('jumperBoxHighScore', this.highScore);
+                localStorage.setItem('jumperBoxOwnedSkins', JSON.stringify(this.ownedSkins));
+                localStorage.setItem('jumperBoxSelectedSkin', this.player.skin);
+            }
+
+            // Закрыть магазин
+            closeShop() {
+                const shopModal = document.getElementById('shopModal');
+                if (shopModal) {
+                    shopModal.style.display = 'none';
+                }
+
+                // Если игра закончилась, показать кнопки заново
+                if (this.gameOver) {
+                    // Показать кнопки рестарта и магазина
+                    const restartButton = document.getElementById('restartButton');
+                    if (restartButton) {
+                        restartButton.style.display = 'block';
+                    }
+                    
+                    const shopButton = document.getElementById('shopButton');
+                    if (shopButton) {
+                        shopButton.style.display = 'block';
+                    }
+                    
+                    const controlButtons = document.getElementById('controlButtons');
+                    if (controlButtons) {
+                        controlButtons.style.display = 'flex';
+                    }
+                }
+            }
+
+            // Окончание игры
             endGame() {
-                console.log("endGame вызван, устанавливаем gameOver = true");
+                if (this.gameOver) return;
+                
+                // Сохраняем состояние игры
                 this.gameOver = true;
                 
+                // Обновляем рекорд, если текущий счет больше
                 if (this.score > this.highScore) {
                     this.highScore = this.score;
-                    localStorage.setItem('doodleJumpHighScore', this.highScore);
+                    localStorage.setItem('jumperBoxHighScore', this.highScore);
                 }
                 
-                // Добавляем класс game-over к gameContainer
+                // Сохраняем количество монет
+                localStorage.setItem('jumperBoxCoins', this.coins);
+                
+                // Показываем кнопки управления
+                const controlButtons = document.getElementById('controlButtons');
+                if (controlButtons) {
+                    controlButtons.style.display = 'flex';
+                }
+                
+                // Показываем кнопку рестарта
+                const restartButton = document.getElementById('restartButton');
+                if (restartButton) {
+                    restartButton.style.display = 'block';
+                }
+                
+                // Показываем кнопку магазина
+                const shopButton = document.getElementById('shopButton');
+                if (shopButton) {
+                    shopButton.style.display = 'block';
+                }
+                
+                // Добавляем класс game-over к контейнеру для стилизации
                 const gameContainer = document.getElementById('gameContainer');
                 if (gameContainer) {
                     gameContainer.classList.add('game-over');
                 }
                 
-                // Устанавливаем правильное отображение UI-элементов
-                const restartBtn = document.getElementById('restartBtn');
-                const shopBtnInGame = document.getElementById('shopBtnInGame');
-                const gameUI = document.getElementById('gameUI');
-                const controlButtons = document.getElementById('controlButtons');
-                
-                if (gameUI) {
-                    gameUI.style.display = 'block';
-                    gameUI.style.zIndex = '1000';
-                }
-                
-                // Отображаем контейнер с кнопками
-                if (controlButtons) {
-                    controlButtons.style.display = 'flex';
-                    controlButtons.style.zIndex = '1001';
-                    
-                    // Определяем ориентацию кнопок в зависимости от ширины экрана
-                    if (window.innerWidth <= 480) {
-                        controlButtons.style.flexDirection = 'column';
-                    } else {
-                        controlButtons.style.flexDirection = 'row';
-                    }
-                }
-                
-                // Явно устанавливаем стили для обеих кнопок
-                if (restartBtn) {
-                    restartBtn.style.display = 'block';
-                    restartBtn.style.opacity = '1';
-                    restartBtn.style.visibility = 'visible';
-                    
-                    // На мобильных экранах кнопки располагаются вертикально
-                    if (window.innerWidth <= 480) {
-                        restartBtn.style.margin = '0 auto 15px auto';
-                        restartBtn.style.width = 'auto';
-                        restartBtn.style.minWidth = '200px';
-                    } else {
-                        restartBtn.style.marginRight = '15px';
-                    }
-                }
-                
-                if (shopBtnInGame) {
-                    shopBtnInGame.style.display = 'block';
-                    shopBtnInGame.style.opacity = '1';
-                    shopBtnInGame.style.visibility = 'visible';
-                    
-                    if (window.innerWidth <= 480) {
-                        shopBtnInGame.style.margin = '15px auto 0 auto';
-                        shopBtnInGame.style.width = 'auto';
-                        shopBtnInGame.style.minWidth = '200px';
-                    } else {
-                        shopBtnInGame.style.marginLeft = '15px';
-                    }
-                }
-                
-                // Создание резервных кнопок, если основные не были найдены
-                if (!restartBtn || !shopBtnInGame) {
-                    // Если кнопки не найдены, создаем их заново
-                    const newControlButtons = document.createElement('div');
-                    newControlButtons.id = 'fallbackControlButtons';
-                    newControlButtons.style.position = 'absolute';
-                    newControlButtons.style.top = '65%';
-                    newControlButtons.style.left = '50%';
-                    newControlButtons.style.transform = 'translate(-50%, -50%)';
-                    newControlButtons.style.display = 'flex';
-                    newControlButtons.style.justifyContent = 'center';
-                    newControlButtons.style.gap = '30px';
-                    newControlButtons.style.zIndex = '9999';
-                    
-                    // Ориентация кнопок в зависимости от ширины экрана
-                    if (window.innerWidth <= 480) {
-                        newControlButtons.style.flexDirection = 'column';
-                    }
-                    
-                    if (!restartBtn) {
-                        const newRestartBtn = document.createElement('button');
-                        newRestartBtn.textContent = 'Перезапуск';
-                        newRestartBtn.style.padding = '15px 30px';
-                        newRestartBtn.style.background = '#4CAF50';
-                        newRestartBtn.style.color = 'white';
-                        newRestartBtn.style.border = 'none';
-                        newRestartBtn.style.borderRadius = '25px';
-                        newRestartBtn.style.cursor = 'pointer';
-                        newRestartBtn.style.zIndex = '9999';
-                        newRestartBtn.style.margin = window.innerWidth <= 480 ? '0 auto 15px auto' : '0 15px 0 0';
-                        newRestartBtn.onclick = () => this.resetGame();
-                        newControlButtons.appendChild(newRestartBtn);
-                    }
-                    
-                    if (!shopBtnInGame) {
-                        const newShopBtn = document.createElement('button');
-                        newShopBtn.textContent = 'Магазин';
-                        newShopBtn.style.padding = '15px 30px';
-                        newShopBtn.style.background = '#9C27B0';
-                        newShopBtn.style.color = 'white';
-                        newShopBtn.style.border = 'none';
-                        newShopBtn.style.borderRadius = '25px';
-                        newShopBtn.style.cursor = 'pointer';
-                        newShopBtn.style.zIndex = '9999';
-                        newShopBtn.style.margin = window.innerWidth <= 480 ? '15px auto 0 auto' : '0 0 0 15px';
-                        newShopBtn.onclick = () => this.showShop();
-                        newControlButtons.appendChild(newShopBtn);
-                    }
-                    
-                    gameContainer.appendChild(newControlButtons);
-                }
-                
-                // Hide touch zones when game is over
-                const leftTouch = document.getElementById('leftTouch');
-                const rightTouch = document.getElementById('rightTouch');
-                if (leftTouch) leftTouch.style.display = 'none';
-                if (rightTouch) rightTouch.style.display = 'none';
-                
-                console.log("Завершение метода endGame");
-            }
-            
-            // Reset the game state
-            resetGame() {
-                this.gameOver = false;
-                this.score = 0;
-                this.platforms = [];
-                this.player = null;
-                this.difficulty = 1;
-                this.cameraY = 0;
-                
-                // Сброс флагов нажатия клавиш
-                this.leftPressed = false;
-                this.rightPressed = false;
-                
-                // Удаляем класс game-over
-                const gameContainer = document.getElementById('gameContainer');
-                if (gameContainer) {
-                    gameContainer.classList.remove('game-over');
-                }
-                
-                // Скрываем возможные дополнительные кнопки
-                const fallbackButtons = document.getElementById('fallbackControlButtons');
-                if (fallbackButtons) {
-                    fallbackButtons.style.display = 'none';
-                }
-                
-                // Show touch zones when game is reset
-                const leftTouch = document.getElementById('leftTouch');
-                const rightTouch = document.getElementById('rightTouch');
-                if (leftTouch && this.isMobile) leftTouch.style.display = 'block';
-                if (rightTouch && this.isMobile) rightTouch.style.display = 'block';
-                
-                this.init();
-            }
-
-            updateShopButtons(itemId) {
-                const buyStarsButton = document.getElementById('buyStarsButton');
-                if (!buyStarsButton) return;
-                
-                // Always hide stars button
-                buyStarsButton.style.display = 'none';
-            }
-
-            // Resize canvas to fit window
-            resizeCanvas() {
-                const gameContainer = document.getElementById('gameContainer');
-                if (!gameContainer) {
-                    console.error('Game container not found!');
-                    return;
-                }
-                
-                const containerWidth = gameContainer.clientWidth;
-                const containerHeight = gameContainer.clientHeight;
-                
-                // Set canvas dimensions
-                this.canvas.width = containerWidth;
-                this.canvas.height = containerHeight;
-                
-                // Update game elements if needed
-                if (this.player) {
-                    // Ensure player stays within bounds after resize
-                    this.player.x = Math.min(Math.max(this.player.x, 0), this.canvas.width - this.player.width);
-                }
+                // Показываем экран окончания игры
+                this.drawGameOver();
             }
         }
 
@@ -2729,8 +2251,8 @@
                     console.log("game после initGame:", game);
                     if (game) {
                         console.log("Запуск игры");
-                        game.startGame();
-                        gameStarted = true;
+                    game.startGame();
+                    gameStarted = true;
                         console.log("gameStarted установлен в true");
                     } else {
                         console.error("Не удалось инициализировать игру!");

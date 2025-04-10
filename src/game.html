@@ -139,7 +139,7 @@
         }
 
         /* Restart Button */
-        #restartBtn {
+        #restartButton {
             display: none;
             z-index: 1001;
             padding: 15px 30px;
@@ -187,7 +187,7 @@
         }
         
         /* Стили для горизонтального расположения кнопок */
-        #restartBtn {
+        #restartButton {
             margin-right: 15px; /* Отступ справа для кнопки рестарта */
             display: none;
             z-index: 1001;
@@ -201,7 +201,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
         
-        #shopBtnInGame {
+        #shopButton {
             margin-left: 15px; /* Отступ слева для кнопки магазина */
             display: none;
             z-index: 1001;
@@ -223,7 +223,7 @@
                 width: auto; /* Убираем фиксированную ширину */
             }
             
-            #restartBtn, #shopBtnInGame {
+            #restartButton, #shopButton {
                 margin: 0; /* Убираем горизонтальные отступы */
                 width: auto; /* Автоматическая ширина вместо фиксированной */
                 min-width: 200px; /* Минимальная ширина для кнопок */
@@ -235,8 +235,8 @@
             display: flex !important;
         }
         
-        .game-over #restartBtn, 
-        .game-over #shopBtnInGame {
+        .game-over #restartButton, 
+        .game-over #shopButton {
             display: block !important;
         }
 
@@ -255,13 +255,13 @@
         }
 
         /* Extra styles for buttons to ensure visibility on game over screen */
-        #restartBtn, #shopBtnInGame {
+        #restartButton, #shopButton {
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
             position: relative;
             cursor: pointer;
         }
 
-        #restartBtn:hover, #shopBtnInGame:hover {
+        #restartButton:hover, #shopButton:hover {
             transform: scale(1.05);
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
         }
@@ -578,7 +578,7 @@
             background: #7B1FA2;
         }
 
-        #restartBtn:hover {
+        #restartButton:hover {
             background: #388E3C !important;
         }
 
@@ -607,8 +607,8 @@
         
         <!-- Выносим кнопки из gameUI в отдельный контейнер на уровне gameContainer -->
         <div id="controlButtons">
-            <button id="restartBtn" class="game-button shop-button-ingame" style="background: #4CAF50;">Перезапуск</button>
-            <button id="shopBtnInGame" class="game-button shop-button-ingame">Магазин</button>
+            <button id="restartButton" class="game-button shop-button-ingame" style="background: #4CAF50;">Перезапуск</button>
+            <button id="shopButton" class="game-button shop-button-ingame">Магазин</button>
         </div>
         
         <div id="leftTouch" class="touch-zone"></div>
@@ -632,7 +632,7 @@
                 <!-- Shop items will be dynamically added here -->
             </div>
             <div class="shop-buttons">
-                <div id="shopMessage" class="shop-message"></div>
+                <div id="shopMessage" class="shop-message" style="display: none;"></div>
             </div>
         </div>
     </div>
