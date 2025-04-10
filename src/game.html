@@ -141,7 +141,7 @@
         /* Restart Button */
         #restartBtn {
             display: none;
-            z-index: 300;
+            z-index: 1001;
             padding: 15px 30px;
             font-size: 20px;
             background: #4CAF50;
@@ -175,15 +175,20 @@
 
         /* Control Buttons Container */
         #controlButtons {
-            display: flex;
+            display: none; /* Скрыт по умолчанию */
             justify-content: center;
             gap: 20px;
             position: absolute;
             top: 60%;
             left: 50%;
             transform: translate(-50%, 0);
-            z-index: 400;
+            z-index: 1001;
             width: 100%;
+        }
+        
+        /* В состоянии game-over показываем кнопки */
+        .game-over #controlButtons {
+            display: flex !important;
         }
 
         /* Game UI */
@@ -511,7 +516,7 @@
         /* Shop Button in Game */
         .shop-button-ingame {
             display: none;
-            z-index: 300;
+            z-index: 1001;
             background: #9C27B0;
             color: white;
             border: none;
@@ -525,6 +530,15 @@
         .shop-button-ingame:hover {
             background: #7B1FA2;
         }
+
+        /* Game Over Styles */
+        /* Стили, специально для экрана завершения игры */
+        .game-over .game-button {
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            z-index: 9999 !important;
+        }
     </style>
 </head>
 <body>
@@ -537,12 +551,15 @@
         </div>
         
         <div id="gameUI" style="display: none;">
-            <div id="controlButtons">
-                <button id="restartBtn" class="game-button">Перезапуск</button>
-                <button id="shopBtnInGame" class="game-button shop-button-ingame">Магазин</button>
-            </div>
             <div id="coinCounter">0</div>
         </div>
+        
+        <!-- Выносим кнопки из gameUI в отдельный контейнер на уровне gameContainer -->
+        <div id="controlButtons">
+            <button id="restartBtn" class="game-button">Перезапуск</button>
+            <button id="shopBtnInGame" class="game-button shop-button-ingame">Магазин</button>
+        </div>
+        
         <div id="leftTouch" class="touch-zone"></div>
         <div id="rightTouch" class="touch-zone"></div>
     </div>

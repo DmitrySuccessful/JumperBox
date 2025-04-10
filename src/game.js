@@ -1346,9 +1346,21 @@
                     this.ctx.fillText(`Итоговый счёт: ${this.score}`, canvasWidth/2 - 80, canvasHeight/2);
                     this.ctx.fillText(`Монеты: ${this.coins}`, canvasWidth/2 - 50, canvasHeight/2 + 30);
                     
-                    // Явно показываем кнопки при каждой отрисовке при gameOver
-                    this.showRestartButton();
-                    this.showShopButton();
+                    // Принудительно показываем кнопки при каждой отрисовке
+                    const restartBtn = document.getElementById('restartBtn');
+                    const shopBtnInGame = document.getElementById('shopBtnInGame');
+                    
+                    if (restartBtn) {
+                        restartBtn.style.display = 'block';
+                        restartBtn.style.position = 'absolute';
+                        restartBtn.style.zIndex = '1001';
+                    }
+                    
+                    if (shopBtnInGame) {
+                        shopBtnInGame.style.display = 'block';
+                        shopBtnInGame.style.position = 'absolute';
+                        shopBtnInGame.style.zIndex = '1001';
+                    }
                 }
             }
             
@@ -2128,16 +2140,101 @@
                     localStorage.setItem('doodleJumpHighScore', this.highScore);
                 }
                 
-                // Показать элементы UI при завершении игры
-                const gameUI = document.getElementById('gameUI');
-                if (gameUI) {
-                    gameUI.style.display = 'block';
-                    gameUI.style.zIndex = '400';
+                // Добавляем класс game-over к gameContainer
+                const gameContainer = document.getElementById('gameContainer');
+                if (gameContainer) {
+                    gameContainer.classList.add('game-over');
                 }
                 
-                // Принудительно выводим кнопки перезапуска и магазина
-                this.showRestartButton();
-                this.showShopButton();
+                // Принудительно создать и отобразить кнопки
+                const restartBtn = document.getElementById('restartBtn');
+                const shopBtnInGame = document.getElementById('shopBtnInGame');
+                const gameUI = document.getElementById('gameUI');
+                const controlButtons = document.getElementById('controlButtons');
+                
+                if (gameUI) {
+                    gameUI.style.display = 'block';
+                    gameUI.style.zIndex = '1000';
+                }
+                
+                if (controlButtons) {
+                    controlButtons.style.display = 'flex';
+                    controlButtons.style.zIndex = '1001';
+                }
+                
+                if (restartBtn) {
+                    restartBtn.style.display = 'block';
+                    restartBtn.style.position = 'absolute';
+                    restartBtn.style.top = '60%';
+                    restartBtn.style.left = '50%';
+                    restartBtn.style.transform = 'translate(-50%, -50%)';
+                    restartBtn.style.zIndex = '1001';
+                    console.log("Кнопка рестарта должна быть видна:", restartBtn);
+                }
+                
+                if (shopBtnInGame) {
+                    shopBtnInGame.style.display = 'block';
+                    shopBtnInGame.style.position = 'absolute';
+                    shopBtnInGame.style.top = '70%';
+                    shopBtnInGame.style.left = '50%';
+                    shopBtnInGame.style.transform = 'translate(-50%, -50%)';
+                    shopBtnInGame.style.zIndex = '1001';
+                    console.log("Кнопка магазина должна быть видна:", shopBtnInGame);
+                }
+                
+                // Принудительно отображаем кнопки напрямую через document.body
+                if (!restartBtn || !shopBtnInGame) {
+                    // Если кнопки не найдены, создаем их заново
+                    const newControlButtons = document.createElement('div');
+                    newControlButtons.id = 'fallbackControlButtons';
+                    newControlButtons.style.position = 'absolute';
+                    newControlButtons.style.top = '60%';
+                    newControlButtons.style.left = '50%';
+                    newControlButtons.style.transform = 'translate(-50%, 0)';
+                    newControlButtons.style.display = 'flex';
+                    newControlButtons.style.justifyContent = 'center';
+                    newControlButtons.style.gap = '20px';
+                    newControlButtons.style.zIndex = '9999';
+                    
+                    if (!restartBtn) {
+                        const newRestartBtn = document.createElement('button');
+                        newRestartBtn.textContent = 'Перезапуск';
+                        newRestartBtn.style.padding = '15px 30px';
+                        newRestartBtn.style.background = '#4CAF50';
+                        newRestartBtn.style.color = 'white';
+                        newRestartBtn.style.border = 'none';
+                        newRestartBtn.style.borderRadius = '25px';
+                        newRestartBtn.style.cursor = 'pointer';
+                        newRestartBtn.style.zIndex = '9999';
+                        newRestartBtn.onclick = () => this.resetGame();
+                        newControlButtons.appendChild(newRestartBtn);
+                    }
+                    
+                    if (!shopBtnInGame) {
+                        const newShopBtn = document.createElement('button');
+                        newShopBtn.textContent = 'Магазин';
+                        newShopBtn.style.padding = '15px 30px';
+                        newShopBtn.style.background = '#9C27B0';
+                        newShopBtn.style.color = 'white';
+                        newShopBtn.style.border = 'none';
+                        newShopBtn.style.borderRadius = '25px';
+                        newShopBtn.style.cursor = 'pointer';
+                        newShopBtn.style.zIndex = '9999';
+                        newShopBtn.onclick = () => this.showShop();
+                        newControlButtons.appendChild(newShopBtn);
+                    }
+                    
+                    gameContainer.appendChild(newControlButtons);
+                }
+                
+                // Проверка стилей кнопок через timeout
+                setTimeout(() => {
+                    const restartBtn = document.getElementById('restartBtn');
+                    const shopBtnInGame = document.getElementById('shopBtnInGame');
+                    console.log("Проверка кнопок через timeout:");
+                    console.log("Кнопка рестарта:", restartBtn, "стиль display:", restartBtn.style.display);
+                    console.log("Кнопка магазина:", shopBtnInGame, "стиль display:", shopBtnInGame.style.display);
+                }, 100);
                 
                 // Hide touch zones when game is over
                 const leftTouch = document.getElementById('leftTouch');
@@ -2145,7 +2242,7 @@
                 if (leftTouch) leftTouch.style.display = 'none';
                 if (rightTouch) rightTouch.style.display = 'none';
                 
-                console.log("Кнопки перезапуска и магазина должны быть видны");
+                console.log("Завершение метода endGame");
             }
             
             // Reset the game state
@@ -2156,6 +2253,18 @@
                 this.player = null;
                 this.difficulty = 1;
                 this.cameraY = 0;
+                
+                // Удаляем класс game-over
+                const gameContainer = document.getElementById('gameContainer');
+                if (gameContainer) {
+                    gameContainer.classList.remove('game-over');
+                }
+                
+                // Скрываем возможные дополнительные кнопки
+                const fallbackButtons = document.getElementById('fallbackControlButtons');
+                if (fallbackButtons) {
+                    fallbackButtons.style.display = 'none';
+                }
                 
                 // Show touch zones when game is reset
                 const leftTouch = document.getElementById('leftTouch');
