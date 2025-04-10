@@ -536,15 +536,12 @@
             const ctx = canvas.getContext('2d');
             
             // Инициализация игры
-            if (canvas) {
-                // Перенаправление на скрипт игры
-                const scriptElement = document.createElement('script');
-                scriptElement.src = 'game.js';
-                document.body.appendChild(scriptElement);
-            } else {
+            if (!canvas) {
                 console.error('Canvas not found!');
             }
         });
     </script>
+    <!-- Прямое подключение JavaScript файла -->
+    <script src="game.js"></script>
 </body>
 </html> 
