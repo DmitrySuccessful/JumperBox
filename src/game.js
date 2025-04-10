@@ -1271,7 +1271,7 @@
                             );
                         }
                     } else {
-                        this.gameOver();
+                        this.endGame();
                     }
                 }
                 
@@ -1934,6 +1934,13 @@
                 const restartBtn = document.getElementById('restartBtn');
                 if (restartBtn) {
                     restartBtn.style.display = 'block';
+                    restartBtn.style.position = 'absolute';
+                    restartBtn.style.zIndex = '300';
+                    restartBtn.style.top = '60%';
+                    restartBtn.style.left = '50%';
+                    restartBtn.style.transform = 'translate(-50%, -50%)';
+                    restartBtn.style.backgroundColor = '#4CAF50';
+                    restartBtn.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
                 }
             }
             
@@ -1950,6 +1957,13 @@
                 const shopBtnInGame = document.getElementById('shopBtnInGame');
                 if (shopBtnInGame) {
                     shopBtnInGame.style.display = 'block';
+                    shopBtnInGame.style.position = 'absolute';
+                    shopBtnInGame.style.zIndex = '300';
+                    shopBtnInGame.style.top = '70%';
+                    shopBtnInGame.style.left = '50%';
+                    shopBtnInGame.style.transform = 'translate(-50%, -50%)';
+                    shopBtnInGame.style.backgroundColor = '#9C27B0';
+                    shopBtnInGame.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
                 }
             }
             
@@ -2104,14 +2118,18 @@
 
             // Game loop method
             gameLoop() {
+                // Обновление игры происходит только если игра не завершена
                 if (!this.gameOver) {
                     this.update();
-                    this.draw();
-                    requestAnimationFrame(() => this.gameLoop());
                 }
+                // Отрисовка происходит всегда
+                this.draw();
+                // Цикл продолжается всегда
+                requestAnimationFrame(() => this.gameLoop());
             }
 
-            gameOver() {
+            // Переименовываем метод с gameOver на endGame
+            endGame() {
                 this.gameOver = true;
                 
                 if (this.score > this.highScore) {
