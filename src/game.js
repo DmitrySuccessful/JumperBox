@@ -154,7 +154,7 @@
                 this.width = 40;
                 this.height = 40;
                 this.velocityX = 0;
-                this.velocityY = 0;
+                this.velocityY = 0;  // Явно устанавливаем нулевую вертикальную скорость при создании
                 this.isJumping = false;
                 this.powerUpTimer = 0;
                 this.hasPowerUp = false;
@@ -658,7 +658,8 @@
             }
 
             jump(force = -12) {
-                this.velocityY = force;
+                // Всегда используем фиксированное значение -12 для стандартного прыжка
+                this.velocityY = -12;
                 this.isJumping = true;
             }
 
@@ -1747,6 +1748,12 @@
                     return;
                 }
                 
+                // Скрываем кнопки управления перед открытием магазина
+                const controlButtons = document.getElementById('controlButtons');
+                if (controlButtons) {
+                    controlButtons.style.display = 'none';
+                }
+                
                 // Update shop coins display
                 const shopCoins = document.getElementById('shopCoins');
                 if (shopCoins) {
@@ -1906,9 +1913,10 @@
                     this.platforms.push(new Platform(x, y, 'normal'));
                 }
                 
-                // Create player with the selected skin
+                // Create player with the selected skin and explicit velocityY = 0
                 const selectedSkin = localStorage.getItem('doodleJumpSelectedSkin') || 'default';
                 this.player = new Player(this.canvas.width / 2, this.canvas.height - 100, selectedSkin);
+                this.player.velocityY = 0; // Явно устанавливаем нулевую скорость
                 
                 // Initialize player position on the first platform
                 this.initializePlayerPosition();
@@ -2006,6 +2014,14 @@
                 const shopModal = document.getElementById('shopModal');
                 if (shopModal) {
                     shopModal.style.display = 'none';
+                    
+                    // Если игра завершена, показываем кнопки управления снова
+                    if (this.gameOver) {
+                        const controlButtons = document.getElementById('controlButtons');
+                        if (controlButtons) {
+                            controlButtons.style.display = 'flex';
+                        }
+                    }
                 } else {
                     console.error('Shop modal element not found!');
                 }
