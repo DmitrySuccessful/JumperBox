@@ -1345,6 +1345,10 @@
                     this.ctx.font = '20px Arial';
                     this.ctx.fillText(`Итоговый счёт: ${this.score}`, canvasWidth/2 - 80, canvasHeight/2);
                     this.ctx.fillText(`Монеты: ${this.coins}`, canvasWidth/2 - 50, canvasHeight/2 + 30);
+                    
+                    // Явно показываем кнопки при каждой отрисовке при gameOver
+                    this.showRestartButton();
+                    this.showShopButton();
                 }
             }
             
@@ -1934,13 +1938,6 @@
                 const restartBtn = document.getElementById('restartBtn');
                 if (restartBtn) {
                     restartBtn.style.display = 'block';
-                    restartBtn.style.position = 'absolute';
-                    restartBtn.style.zIndex = '300';
-                    restartBtn.style.top = '60%';
-                    restartBtn.style.left = '50%';
-                    restartBtn.style.transform = 'translate(-50%, -50%)';
-                    restartBtn.style.backgroundColor = '#4CAF50';
-                    restartBtn.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
                 }
             }
             
@@ -1957,13 +1954,6 @@
                 const shopBtnInGame = document.getElementById('shopBtnInGame');
                 if (shopBtnInGame) {
                     shopBtnInGame.style.display = 'block';
-                    shopBtnInGame.style.position = 'absolute';
-                    shopBtnInGame.style.zIndex = '300';
-                    shopBtnInGame.style.top = '70%';
-                    shopBtnInGame.style.left = '50%';
-                    shopBtnInGame.style.transform = 'translate(-50%, -50%)';
-                    shopBtnInGame.style.backgroundColor = '#9C27B0';
-                    shopBtnInGame.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
                 }
             }
             
@@ -2130,6 +2120,7 @@
 
             // Переименовываем метод с gameOver на endGame
             endGame() {
+                console.log("endGame вызван, устанавливаем gameOver = true");
                 this.gameOver = true;
                 
                 if (this.score > this.highScore) {
@@ -2137,7 +2128,14 @@
                     localStorage.setItem('doodleJumpHighScore', this.highScore);
                 }
                 
-                // Show restart and shop buttons
+                // Показать элементы UI при завершении игры
+                const gameUI = document.getElementById('gameUI');
+                if (gameUI) {
+                    gameUI.style.display = 'block';
+                    gameUI.style.zIndex = '400';
+                }
+                
+                // Принудительно выводим кнопки перезапуска и магазина
                 this.showRestartButton();
                 this.showShopButton();
                 
@@ -2146,6 +2144,8 @@
                 const rightTouch = document.getElementById('rightTouch');
                 if (leftTouch) leftTouch.style.display = 'none';
                 if (rightTouch) rightTouch.style.display = 'none';
+                
+                console.log("Кнопки перезапуска и магазина должны быть видны");
             }
             
             // Reset the game state
@@ -2235,15 +2235,6 @@
                 if (game && game.player) {
                     // Убедимся, что игрок не выходит за границы
                     game.player.x = Math.min(Math.max(game.player.x, 0), canvas.width - game.player.width);
-                }
-            }
-            
-            // Game loop
-            function gameLoop() {
-                if (game) {
-                    game.update();
-                    game.draw();
-                    requestAnimationFrame(gameLoop);
                 }
             }
             
